@@ -26,6 +26,6 @@ amodel = croc.IntegratedActionModelEuler(damodel, 0.1)
 problem = croc.ShootingProblem(model.x0, [amodel for t in range(20)], amodel)
 
 mpc = sobec.MPCWalk(problem)
-mpc.Tmpc = 10  # len(problem.runningModels)
+mpc.Tmpc = 1  # len(problem.runningModels)
 mpc.initialize([model.x0, model.x0], [model.x0])
 mpc.calc(model.x0, 0)
