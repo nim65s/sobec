@@ -1,3 +1,5 @@
+add_subdirectory(benchmark)
+
 SET(${PROJECT_NAME}_BENCHMARK
   bench-mpc-walk
   )
@@ -9,4 +11,4 @@ FOREACH(BENCHMARK_NAME ${${PROJECT_NAME}_BENCHMARK})
 ENDFOREACH(BENCHMARK_NAME ${${PROJECT_NAME}_BENCHMARK})
 
 target_compile_definitions(bench-mpc-walk PRIVATE PROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
-target_link_libraries(bench-mpc-walk PUBLIC ${PROJECT_NAME}_py2cpp)
+target_link_libraries(bench-mpc-walk PUBLIC ${PROJECT_NAME}_py2cpp benchmark::benchmark)
