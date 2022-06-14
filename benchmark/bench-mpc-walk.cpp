@@ -1,3 +1,5 @@
+#include <benchmark/benchmark.h>
+
 #include <iostream>
 #include <pinocchio/algorithm/model.hpp>
 #include <pinocchio/parsers/srdf.hpp>
@@ -6,7 +8,8 @@
 #include <sobec/mpc-walk.hpp>
 #include <sobec/ocp-walk.hpp>
 #include <sobec/py2cpp.hpp>
-int main() {
+
+static void BM_SomeFunction(benchmark::State& state) {
   using namespace sobec;
   using namespace crocoddyl;
 
@@ -164,9 +167,11 @@ int main() {
   std::cout << "Start the mpc loop" << std::endl;
   Eigen::VectorXd x = robot->x0;
 
-  for (int t = 1; t <= 100; t++) {
-    std::cout << "=== " << t << " === " << std::endl;
-    mpc->calc(x, t);
+  int t = 1;
+  for (auto _ : state) {
+    mpc->calc(x, t++);
     x = mpc->solver->get_xs()[1];
   }
 }
+BENCHMARK(BM_SomeFunction);
+BENCHMARK_MAIN();
