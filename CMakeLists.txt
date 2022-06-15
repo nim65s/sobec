@@ -122,6 +122,7 @@ if(BUILD_PYTHON_INTERFACE)
   target_link_libraries(${PROJECT_NAME}_py2cpp PRIVATE ${PYTHON_LIBRARIES})
   target_include_directories(${PROJECT_NAME}_py2cpp PRIVATE ${PYTHON_INCLUDE_DIRS})
   TARGET_LINK_BOOST_PYTHON(${PROJECT_NAME}_py2cpp PRIVATE)
+  install(TARGETS ${PROJECT_NAME}_py2cpp EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
 
   add_subdirectory(python)
 endif()
