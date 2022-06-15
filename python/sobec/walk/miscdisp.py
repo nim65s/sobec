@@ -36,10 +36,10 @@ def reprProblem(problem):
 
 def contact2car(model, contactIds, contacts, costs):
     """Represent an ocp as one line of ASCII caracters for contacts and impacts"""
-    left = "⎻"
-    right = "_"
-    leftplus = "┘"
-    rightplus = "┌"
+    left = "."
+    right = "."
+    leftplus = "."
+    rightplus = "."
     res = ""
     if len(contacts) == 2:
         if "%s_altitudeimpact" % model.frames[contactIds[1]].name in costs:
