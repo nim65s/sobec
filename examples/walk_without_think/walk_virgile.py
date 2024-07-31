@@ -8,6 +8,7 @@ from numpy.linalg import norm, pinv, inv, svd, eig  # noqa: F401
 import sobec
 import sobec.walk_without_think.plotter
 import specific_params
+from loaders_virgile import load_simplified
 
 # #####################################################################################
 # ## TUNING ###########################################################################
@@ -24,28 +25,7 @@ walkParams = specific_params.WalkBattobotParams()
 # ### LOAD ROBOT ######################################################################
 # #####################################################################################
 
-# ## LOAD AND DISPLAY TALOS
-# Load the robot model from example robot data and display it if possible in
-# Gepetto-viewer
-
-#urdf = sobec.talos_collections.robexLoadAndReduce("talos", walkParams.robotName)
-urdffile= "robot.urdf"
-urdfpath = "../model_robot_virgile/model_simplified"
-urdf = pin.RobotWrapper.BuildFromURDF(urdfpath + "/" + urdffile,urdfpath,
-                                      root_joint=pin.JointModelFreeFlyer())
-# urdf.q0 = pin.neutral(urdf.model)
-# urdf.q0[2] = +0.5507357853479324 ## So that the feet are at z=0
-
-# Optimized with compute_init_config_virgile (pin3) so that:
-# - both foot flat on the ground
-# - COM in between the two feet
-# - torso at 0 orientation
-#urdf.q0 = np.array([ 0.085858,  0.000065,  0.570089,  0.      ,  0.      ,  1.      ,  0.      , -0.      , -0.00009 , -0.208644, -0.043389,  0.252034, -0.00009 ,  0.      , -0.00009 ,  0.208644, -0.043389,  0.252034, -0.00009 ])
-urdf.q0 = np.array([ 0.177111, -0.117173,  0.692838,  0.      ,  0.      , -0.      ,  1.      ,  0.      , -0.000377,  1.203784,  0.807122, -0.396662,  0.000377,  0.      , -0.000377, -1.204769, -0.81081 ,  0.39396 ,  0.000377])
-
-urdf.model.referenceConfigurations['half_sitting'] = urdf.q0.copy()
-# robot = sobec.wwt.RobotWrapper(urdf.model, contactKey="ankle_x")
-robot = sobec.wwt.RobotWrapper(urdf.model, contactKey="foot_frame")
+robot = load_simplified()
 assert len(walkParams.stateImportance) == robot.model.nv * 2
 
 # #####################################################################################
@@ -80,7 +60,7 @@ except (KeyError, FileNotFoundError):
 try:
     import meshcat
     from pinocchio.visualize import MeshcatVisualizer
-    viz = MeshcatVisualizer(urdf.model, urdf.collision_model, urdf.visual_model)
+    viz = MeshcatVisualizer(robot.model, robot.collision_model, robot.visual_model)
     viz.viewer = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
     viz.clean()
     viz.loadViewerModel(rootNodeName="universe")
