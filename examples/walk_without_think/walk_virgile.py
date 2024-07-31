@@ -30,7 +30,7 @@ walkParams = specific_params.WalkBattobotParams()
 
 #urdf = sobec.talos_collections.robexLoadAndReduce("talos", walkParams.robotName)
 urdffile= "robot.urdf"
-urdfpath = "model_robot_virgile/model_simplified"
+urdfpath = "../model_robot_virgile/model_simplified"
 urdf = pin.RobotWrapper.BuildFromURDF(urdfpath + "/" + urdffile,urdfpath,
                                       root_joint=pin.JointModelFreeFlyer())
 # urdf.q0 = pin.neutral(urdf.model)
@@ -81,9 +81,9 @@ try:
     import meshcat
     from pinocchio.visualize import MeshcatVisualizer
     viz = MeshcatVisualizer(urdf.model, urdf.collision_model, urdf.visual_model)
-    server = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
-    # server = None
-    viz.initViewer(loadModel=True, viewer=server)
+    viz.viewer = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
+    viz.clean()
+    viz.loadViewerModel(rootNodeName="universe")
 except (ImportError, AttributeError):
     print("No viewer")
 
@@ -149,13 +149,12 @@ plt.ion(); plt.show()
 pin.SE3.__repr__ = pin.SE3.__str__
 np.set_printoptions(precision=2, linewidth=300, suppress=True, threshold=10000)
 
-viz.play(np.array(ddp.xs)[:, : robot.model.nq], walkParams.DT)
+while input("Press q to quit the visualisation") != "q":
+    viz.play(np.array(ddp.xs)[:, : robot.model.nq], walkParams.DT)
 
-'''
-ims = []
-for x in ddp.xs:
-    viz.display(x[:robot.model.nq])
-    ims.append( viz.viewer.get_image())
-import imageio # pip install imageio[ffmpeg]
-imageio.mimsave("/tmp/battobot.mp4", [np.array(i) for i in ims],fps=int(1//walkParams.DT))
-'''
+# for x in ddp.xs:
+#     viz.display(x[:robot.model.nq])
+    # ims.append( viz.viewer.get_image())
+# import imageio # pip install imageio[ffmpeg]
+# imageio.mimsave("/tmp/battobot.mp4", imgs, 1//walkParams.DT)
+
