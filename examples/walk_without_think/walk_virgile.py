@@ -49,7 +49,7 @@ except (KeyError, FileNotFoundError):
     contactPattern = (
         []
         + [[1, 1]] * walkParams.Tstart
-        + (cycle * 2)
+        + (cycle * 4)
         + [[1, 1]] * walkParams.Tend
         + [[1, 1]]
     )

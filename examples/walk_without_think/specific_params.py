@@ -97,7 +97,7 @@ class WalkBattobotParams(swparams.WalkParams):
 
     flyHighSlope = 3/2e-2
     
-    def __init__(self):
+    def __init__(self, model="simplified"):
         swparams.WalkParams.__init__(self, "talos_legs")
         # self.stateTerminalImportance = np.array(
         #     [
@@ -107,7 +107,7 @@ class WalkBattobotParams(swparams.WalkParams):
         #   1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1.
         #     ])
 
-class WalkBattobotOpenParams(swparams.WalkParams):
+class WalkBattobotClosedParams(swparams.WalkParams):
     '''
     Specialization for Virgile proto
     '''
@@ -127,7 +127,7 @@ class WalkBattobotOpenParams(swparams.WalkParams):
     Tend = int(0.3 / DT)
     transitionDuration = (Tdouble - 1) // 2
 
-    vcomRef = np.r_[ 0.1, 0,0 ]
+    vcomRef = np.r_[ 0.2, 0,0 ]
     
     centerOfFrictionWeight = 0
     comWeight = 0
@@ -144,22 +144,48 @@ class WalkBattobotOpenParams(swparams.WalkParams):
     refMainJointsAtImpactWeight = 0
     refStateWeight = 0.1
     refTorqueWeight = 0
-    stateTerminalWeight = 1000 # 20
-    vcomWeight =  1
+    stateTerminalWeight = 100 # 20
+    vcomWeight = 10
     verticalFootVelWeight = 0 # 20
 
     flyHighSlope = 3/2e-2
     
-    def __init__(self):
+    def __init__(self, model="simplified"):
         swparams.WalkParams.__init__(self, "talos_legs")
-        # self.stateTerminalImportance = np.array(
-        #     [
-        #   3. ,  3. ,  0. ,  0. ,  0. , 30. ,
-        #   0.1,  0.1,  0.1,  0.1,  0.1,  0.1,  0.1,  0.1,  0.1,  0.1,  0.1,  0.1,
-        #   1. ,  1. ,  1. ,  1. ,  1. ,  1. ,
-        #   1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1. ,  1.
-        #     ])
-    
+        basisQWeights = [0,0,0,50,50,0]
+        legQWeights = [
+            5, 5, 1, # hip x, z, y
+            0, # knee (actuated)
+            2, # knee (passive)
+            1, 1, # ankle x, y
+            0, 0, 0, 0, # ujoints ankles-shins
+            0, # calf motor
+            0, 0, 0, # spherical calf-shin
+            0, # calf motor
+            0, 0, 0, # spherical calf-shin
+            0, 0, # Ujoint knee
+            0, 0, 0, # spherical hip
+        ]
+        basisVWeights = [0,0,3,3,3,1]
+        legVWeights = [
+            1, 1, 1, # hip x, z, y
+            0, # knee (actuated)
+            1, # knee (passive)
+            1, 1, # ankle x, y
+            0, 0, 0, 0, # ujoints ankles-shins
+            0, # calf motor
+            0, 0, 0, # spherical calf-shin
+            0, # calf motor
+            0, 0, 0, # spherical calf-shin
+            0, 0, # Ujoint knee
+            0, 0, 0, # spherical hip
+        ]
+        self.stateImportance = np.array(
+            basisQWeights + legQWeights * 2 + basisVWeights + legVWeights * 2
+        )
+        nv = len(basisVWeights) + 2* len(legVWeights)
+        self.stateTerminalImportance = np.array([3, 3, 0, 0, 0, 30] + [0] * (nv - 6) + [1] * nv)
+
 class WalkParams(swparams.WalkParams):
     """
     Specialization of the basic parameters for the MPC example of this folder.

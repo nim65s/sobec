@@ -19,7 +19,7 @@ from loaders_virgile import load_complete_open
 # When setting them to >0, take care to uncomment the corresponding line.
 # All these lines are marked with the tag ##0##.
 
-walkParams = specific_params.WalkBattobotOpenParams()
+walkParams = specific_params.WalkBattobotParams()
 
 # #####################################################################################
 # ### LOAD ROBOT ######################################################################
@@ -49,7 +49,7 @@ except (KeyError, FileNotFoundError):
     contactPattern = (
         []
         + [[1, 1]] * walkParams.Tstart
-        + (cycle * 1)
+        + (cycle * 6)
         + [[1, 1]] * walkParams.Tend
         + [[1, 1]]
     )
