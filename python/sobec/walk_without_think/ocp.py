@@ -33,7 +33,14 @@ def buildRunningModels(robotWrapper, contactPattern, params):
 
         # Basics
         state = croc.StateMultibody(robot.model)
-        actuation = croc.ActuationModelFloatingBase(state)
+        if robot.actuationModel is None:
+            actuation = croc.ActuationModelFloatingBase(state)
+        else:
+            from .actuation_matrix import ActuationModelMatrix
+            act_matrix = np.zeros((robot.model.nv, len(robot.actuationModel.mot_ids_v)))
+            for iu, iv in enumerate(robot.actuationModel.mot_ids_v):
+                act_matrix[iv, iu] = 1
+            actuation = ActuationModelMatrix(state, np.shape(act_matrix)[1], act_matrix)
 
         # Contacts
         contacts = croc.ContactModelMultiple(state, actuation.nu)
@@ -44,6 +51,19 @@ def buildRunningModels(robotWrapper, contactPattern, params):
                 state, cid, pin.SE3.Identity(), pin.WORLD, actuation.nu, p.baumgartGains
             )
             contacts.addContact(robot.model.frames[cid].name + "_contact", contact)
+        for k, cm in enumerate(robot.loop_constraints_models):
+            assert cm.type == pin.ContactType.CONTACT_6D and cm.reference_frame == pin.ReferenceFrame.LOCAL
+            contact = croc.ContactModel6DLoop(
+                state,
+                cm.joint1_id,
+                cm.joint1_placement,
+                cm.joint2_id,
+                cm.joint2_placement,
+                pin.ReferenceFrame.LOCAL,
+                actuation.nu,
+                np.array([0., 0.])
+            )
+            contacts.addContact(f"loop_contact_{k}", contact)
 
         # Costs
         costs = croc.CostModelSum(state, actuation.nu)

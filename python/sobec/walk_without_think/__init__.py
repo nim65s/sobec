@@ -1,5 +1,5 @@
 # flake8: noqa
-from . import ocp, weight_share, robot_wrapper, config_mpc, save_traj
+from . import ocp, weight_share, robot_wrapper, config_mpc, save_traj, actuation_matrix
 from . import miscdisp, params, yaml_params
 
 from .ocp import Solution, buildSolver, buildInitialGuess

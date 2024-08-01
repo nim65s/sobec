@@ -36,7 +36,7 @@ def addChildrenFrames(
 
 
 class RobotWrapper:
-    def __init__(self, model, contactKey, refPosture="half_sitting"):
+    def __init__(self, model, contactKey, refPosture="half_sitting", closed_loop=False):
         """
         :param: a well-built pinocchio model, for example built from URDF.
         :param: contactKey: the sub-string for all frame that will act as contacts
@@ -57,6 +57,8 @@ class RobotWrapper:
             model_version = "legs"
         elif model.nv - 6 == 14:
             model_version = "low"
+        elif closed_loop:
+            model_version = "closed_loop"
         if model_version is None:
             raise RuntimeError("I need a robot version")
         self.name = "%s_%s" % (model.name, model_version)
@@ -64,6 +66,7 @@ class RobotWrapper:
         self.contactIds = [
             i for i, f in enumerate(self.model.frames) if contactKey in f.name
         ]
+        self.loop_constraints_models = []
 
         addChildrenFrames(self.model, self.contactIds, "tow", xtranslation=0.1)
         self.towIds = {
@@ -88,3 +91,5 @@ class RobotWrapper:
             -sum(Y.mass for Y in self.model.inertias) * self.model.gravity.linear[2]
         )
         self.com0 = pin.centerOfMass(self.model, self.data, q0)
+
+        self.actuationModel = None
