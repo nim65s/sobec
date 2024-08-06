@@ -399,13 +399,33 @@ def buildTerminalModel(robotWrapper, contactPattern, params):
 # ### SOLVER ########################################################################
 
 
-def buildSolver(robotWrapper, contactPattern, walkParams):
+def buildSolver(robotWrapper, contactPattern, walkParams, solver='FDDP'):
     models = buildRunningModels(robotWrapper, contactPattern, walkParams)
     termmodel = buildTerminalModel(robotWrapper, contactPattern, walkParams)
 
     problem = croc.ShootingProblem(robotWrapper.x0, models, termmodel)
-    ddp = croc.SolverFDDP(problem)
-    ddp.th_stop = walkParams.solver_th_stop
+    if solver == 'FDDP':
+        ddp = croc.SolverFDDP(problem)
+        ddp.verbose = True
+        ddp.th_stop = walkParams.solver_th_stop
+    elif solver == 'CSQP':
+        try:
+            import mim_solvers
+        except ImportError:
+            print("Please install the `mim_solvers` package to use CSQP")
+            sys.exit(1)
+        ddp = mim_solvers.SolverCSQP(problem)
+        ddp.termination_tolerance = walkParams.solver_th_stop
+        # ddp.eps_abs = 1e-3
+        # ddp.eps_rel = 0
+        # ddp.mu = 1e2
+        # ddp.mu2 = 0
+        # ddp.max_qp_iters = 100
+        ddp.use_filter_line_search = False
+        # ddp.alpha = 1e-5
+        ddp.with_callbacks = True # verbose
+    else:
+        raise ValueError('Unknown solver: %s \n Supported option are FDDP and CSQP' % solver)
     return ddp
 
 
