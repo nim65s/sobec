@@ -19,11 +19,12 @@ from loaders_virgile import load_complete_closed
 # When setting them to >0, take care to uncomment the corresponding line.
 # All these lines are marked with the tag ##0##.
 
-WS = False # Warm start
+WS = True # Warm start
 
 walkParams = specific_params.WalkBattobotClosedParams()
+walkParams.saveFile = "/tmp/walk_virgile_closed.npy"
 if WS:
-    walkParams.guessFile = "/tmp/warmstart_closed.npy"
+    walkParams.guessFile = "/tmp/walk_virgile_closed_ws.npy"
 # #####################################################################################
 # ### LOAD ROBOT ######################################################################
 # #####################################################################################
@@ -53,7 +54,7 @@ except (KeyError, FileNotFoundError):
     contactPattern = (
         []
         + [[1, 1]] * walkParams.Tstart
-        + (cycle * 2)
+        + (cycle * 3)
         + [[1, 1]] * walkParams.Tend
         + [[1, 1]]
     )
@@ -84,7 +85,7 @@ print(
 # ### DDP #############################################################################
 # #####################################################################################
 
-ddp = sobec.wwt.buildSolver(robot, contactPattern, walkParams)
+ddp = sobec.wwt.buildSolver(robot, contactPattern, walkParams, solver='FDDP')
 problem = ddp.problem
 x0s, u0s = sobec.wwt.buildInitialGuess(ddp.problem, walkParams)
 ddp.setCallbacks([croc.CallbackVerbose(), croc.CallbackLogger()])
@@ -94,7 +95,7 @@ with open("/tmp/virgile-repr.ascii", "w") as f:
     print("OCP described in /tmp/virgile-repr.ascii")
 
 croc.enable_profiler()
-ddp.solve(x0s, u0s, 200)
+ddp.solve(x0s, u0s, 1)
 
 # assert sobec.logs.checkGitRefs(ddp.getCallbacks()[1], "refs/virgile-logs.npy")
 
@@ -124,6 +125,7 @@ plotter.plotCom(robot.com0)
 plotter.plotFeet()
 plotter.plotFootCollision(walkParams.footMinimalDistance)
 print("Run ```plt.ion(); plt.show()``` to display the plots.")
+plt.ion()
 plt.show()
 # ## DEBUG ######################################################################
 # ## DEBUG ######################################################################
@@ -134,6 +136,9 @@ np.set_printoptions(precision=2, linewidth=300, suppress=True, threshold=10000)
 
 while input("Press q to quit the visualisation") != "q":
     viz.play(np.array(ddp.xs)[:, : robot.model.nq], walkParams.DT)
+
+if walkParams.saveFile is not None and input("Save trajectory? (y/n)") == "y":
+    sobec.wwt.save_traj(np.array(sol.xs), filename=walkParams.saveFile)
 
 # imgs = []
 # import time

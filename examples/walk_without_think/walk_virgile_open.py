@@ -20,6 +20,7 @@ from loaders_virgile import load_complete_open
 # All these lines are marked with the tag ##0##.
 
 walkParams = specific_params.WalkBattobotParams()
+walkParams.saveFile = "/tmp/walk_virgile_open.npy"
 
 # #####################################################################################
 # ### LOAD ROBOT ######################################################################
@@ -49,7 +50,7 @@ except (KeyError, FileNotFoundError):
     contactPattern = (
         []
         + [[1, 1]] * walkParams.Tstart
-        + (cycle * 6)
+        + (cycle * 3)
         + [[1, 1]] * walkParams.Tend
         + [[1, 1]]
     )
@@ -80,7 +81,7 @@ print(
 # ### DDP #############################################################################
 # #####################################################################################
 
-ddp = sobec.wwt.buildSolver(robot, contactPattern, walkParams)
+ddp = sobec.wwt.buildSolver(robot, contactPattern, walkParams, solver='FDDP')
 problem = ddp.problem
 x0s, u0s = sobec.wwt.buildInitialGuess(ddp.problem, walkParams)
 ddp.setCallbacks([croc.CallbackVerbose(), croc.CallbackLogger()])
@@ -130,6 +131,9 @@ np.set_printoptions(precision=2, linewidth=300, suppress=True, threshold=10000)
 
 while input("Press q to quit the visualisation") != "q":
     viz.play(np.array(ddp.xs)[:, : robot.model.nq], walkParams.DT)
+
+if walkParams.saveFile is not None and input("Save trajectory? (y/n)") == "y":
+    sobec.wwt.save_traj(np.array(sol.xs), np.array(sol.us), filename=walkParams.saveFile)
 
 # for x in ddp.xs:
 #     viz.display(x[:robot.model.nq])

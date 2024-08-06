@@ -105,7 +105,7 @@ def load_complete_open():
     assert len(robot.contactIds) == 2
     return robot
 
-def load_complete_closed():
+def load_complete_closed(export_joints_ids=False):
     try:
         from example_parallel_robots.loader_tools import completeRobotLoader
         from example_parallel_robots.freeze_joints import freezeJoints
@@ -186,4 +186,7 @@ def load_complete_closed():
     robot.actuationModel = actuation_model
     robot.loop_constraints_models = robot_constraint_models
     assert len(robot.contactIds) == 2
-    return robot
+    if export_joints_ids:
+        return robot, (SERIAL_JOINT_IDS_Q, SERIAL_JOINT_IDS_V, LOOP_JOINT_IDS_Q, LOOP_JOINT_IDS_V)
+    else:
+        return robot
