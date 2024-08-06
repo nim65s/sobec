@@ -72,7 +72,8 @@ set(${PY_WALK_NAME}_PYTHON
     params.py
     yaml_params.py
     plotter.py
-    save_traj.py)
+    save_traj.py
+    actuation_matrix.py)
 
 foreach(python ${${PY_WALK_NAME}_PYTHON})
   python_install_on_site(${PY_NAME}/walk_without_think ${python})
