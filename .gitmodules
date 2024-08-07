@@ -1,3 +1,6 @@
 [submodule "cmake"]
 	path = cmake
 	url = https://github.com/jrl-umi3218/jrl-cmakemodules.git
+[submodule "examples/walk_without_think/model_robot_virgile"]
+	path = examples/walk_without_think/model_robot_virgile
+	url = git@gitlab.laas.fr:ldematteis/model_robot_virgile.git
