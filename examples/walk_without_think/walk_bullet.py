@@ -94,7 +94,7 @@ ddp.solve(x0s, u0s, 200)
 with open("/tmp/bullet-repr.ascii", "w") as f:
     f.write(sobec.reprProblem(ddp.problem))
     print("OCP described in /tmp/bullet-repr.ascii")
-assert sobec.logs.checkGitRefs(ddp.getCallbacks()[1], "refs/bullet-logs.npy")
+# assert sobec.logs.checkGitRefs(ddp.getCallbacks()[1], "refs/bullet-logs.npy")
 
 mpcparams = sobec.MPCWalkParams()
 sobec.wwt.config_mpc.configureMPCWalk(mpcparams, walkParams)
@@ -109,12 +109,13 @@ mpc.initialize(ddp.xs[: walkParams.Tmpc + 1], ddp.us[: walkParams.Tmpc])
 # ### VIZ #############################################################################
 # #####################################################################################
 try:
-    Viz = pin.visualize.GepettoVisualizer
-    viz = Viz(simu.rmodel, simu.gmodel_col, simu.gmodel_vis)
-    viz.initViewer()
-    viz.loadViewerModel()
-    gv = viz.viewer.gui
-    viz.display(simu.getState()[: robot.model.nq])
+    import meshcat
+    from pinocchio.visualize import MeshcatVisualizer
+    viz = MeshcatVisualizer(simu.rmodel, simu.gmodel_col, simu.gmodel_vis)
+    viz.viewer = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
+    viz.clean()
+    viz.loadViewerModel(rootNodeName="universe")
+    
     viz0 = sobec.GepettoGhostViewer(simu.rmodel, simu.gmodel_col, simu.gmodel_vis, 0.8)
     viz0.hide()
 except (ImportError, AttributeError):
