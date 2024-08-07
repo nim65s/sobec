@@ -6,11 +6,11 @@ from numpy.linalg import norm, pinv, inv, svd, eig  # noqa: F401
 np.set_printoptions(precision=6, linewidth=350, suppress=True,threshold=1e6)
 
 urdffile= "robot.urdf"
-urdfpath = "model_robot_virgile/model_simplified"
+urdfpath = "examples/walk_without_think/model_robot_virgile/model_simplified"
 urdf = pin.RobotWrapper.BuildFromURDF(urdfpath + "/" + urdffile,urdfpath,
                                       root_joint=pin.JointModelFreeFlyer())
 urdf.q0 = pin.neutral(urdf.model)
-urdf.q0[2] = +0.5507357853479324 ## So that the feet are at z=0
+urdf.q0[2] = +0.5532500000000139 ## So that the feet are at z=0
 urdf.model.referenceConfigurations['half_sitting'] = urdf.q0.copy()
 
 model=urdf.model
