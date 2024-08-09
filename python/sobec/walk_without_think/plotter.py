@@ -3,6 +3,64 @@ import pinocchio as pin
 import numpy as np
 from numpy.linalg import norm
 from matplotlib.collections import LineCollection
+from itertools import cycle
+
+class CostPlotter:
+    def __init__(self, model, ddp):
+        self.model = model
+        self.problem = ddp.problem
+        self.runningModels = self.problem.runningModels
+        self.terminalModel = self.problem.terminalModel
+        self.data = self.model.createData()
+
+    def setData(self):
+        self.runningDatas = self.problem.runningDatas
+        self.terminalData = self.problem.terminalData
+    
+    def plotCosts(self):
+        terminal_costs = {}
+        running_costs = {"total_cost": []}
+
+        for k, (rm, rd) in enumerate(zip(self.runningModels, self.runningDatas)):
+            # Add each running cost to list
+            for key, cost in rd.differential.costs.costs.todict().items():
+                if key not in running_costs.keys():
+                    running_costs[key] = [0] * k
+                w = rm.differential.costs.costs.todict()[key].weight
+                running_costs[key].append(cost.cost * w)
+            running_costs["total_cost"].append(rd.differential.cost)
+            # Add the missing values if needed
+            for logged_keys in running_costs.keys():
+                if len(running_costs[logged_keys]) < k+1:
+                    running_costs[logged_keys].append(0)
+        # Terminal costs
+        for key, cost in self.terminalData.differential.costs.costs.todict().items():
+            terminal_costs[key] = cost.cost
+        
+        plt.figure("Running Costs")
+        n_running = len(running_costs.keys())
+        color = iter(plt.cm.hsv(np.linspace(0, 1, n_running)))
+        linestyle = cycle(["-", "--", ":"])
+        for key, values in running_costs.items():
+            c = next(color)
+            ls = next(linestyle)
+            plt.plot(values, linestyle=ls, label=key, c=c)
+        plt.yscale("log")
+        plt.grid()
+        plt.legend()
+        plt.tight_layout()
+
+        plt.figure("Terminal Costs")
+        n_terminal = len(terminal_costs.keys())
+        color = iter(plt.cm.hsv(np.linspace(0, 1, n_terminal)))
+        linestyle = cycle(["-", "--", ":"])
+        for key, value in terminal_costs.items():
+            c = next(color)
+            plt.axhline(value, linestyle="-.", label=key, c=c)
+        plt.yscale("log")
+        plt.grid()
+        plt.legend()
+        plt.tight_layout()        
 
 
 class WalkPlotter:
