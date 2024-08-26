@@ -4,6 +4,7 @@ from .sobec_pywrap import *
 
 from .repr_ocp import reprProblem
 from .viewer_multiple import GepettoGhostViewer
+from .callback_finite_diff import CallbackNumDiff
 from . import logs
 
 # TODO discuss with Guilhem if it is a good it to alias this.

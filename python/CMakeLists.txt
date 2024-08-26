@@ -48,7 +48,7 @@ install(TARGETS ${PY_NAME}_pywrap DESTINATION ${${PY_NAME}_INSTALL_DIR})
 
 set(${PY_NAME}_PYTHON
     __init__.py pinbullet.py viewer_multiple.py talos_collections.py
-    repr_ocp.py logs.py
+    repr_ocp.py logs.py callback_finite_diff.py
     # talos_low.py
 )
 
