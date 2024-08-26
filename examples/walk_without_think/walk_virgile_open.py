@@ -84,7 +84,7 @@ print(
 ddp = sobec.wwt.buildSolver(robot, contactPattern, walkParams, solver='FDDP')
 problem = ddp.problem
 x0s, u0s = sobec.wwt.buildInitialGuess(ddp.problem, walkParams)
-ddp.setCallbacks([croc.CallbackVerbose(), croc.CallbackLogger()])
+ddp.setCallbacks([croc.CallbackVerbose(), croc.CallbackLogger(), sobec.CallbackNumDiff()])
 
 with open("/tmp/virgile-repr.ascii", "w") as f:
     f.write(sobec.reprProblem(ddp.problem))
