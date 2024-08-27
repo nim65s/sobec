@@ -2,6 +2,30 @@ import pinocchio as pin
 import numpy as np
 import sobec
 
+Q0_SHARED = np.array(
+    [
+        0.01278,
+        -0.000194,
+        0.586692,
+        0.0,
+        -0.0,
+        0.0,
+        1.0,
+        -0.0,
+        -0.000281,
+        -0.219024,
+        -0.46888,
+        -0.249856,
+        0.000281,
+        0.0,
+        -0.00028,
+        0.220722,
+        0.471723,
+        0.251,
+        0.00028,
+    ]
+)
+
 
 def load_simplified():
     urdffile = "robot.urdf"
@@ -13,29 +37,7 @@ def load_simplified():
     # - both foot flat on the ground
     # - COM in between the two feet
     # - torso at 0 orientation
-    urdf.q0 = np.array(
-        [
-            -0.193656,
-            -0.115153,
-            0.608212,
-            0.0,
-            -0.0,
-            -0.0,
-            1.0,
-            -0.0,
-            -0.003007,
-            0.384247,
-            0.607733,
-            0.223486,
-            0.003007,
-            -0.0,
-            -0.003008,
-            -0.397044,
-            -0.627097,
-            -0.230053,
-            0.003008,
-        ]
-    )
+    urdf.q0 = Q0_SHARED
     urdf.model.referenceConfigurations["half_sitting"] = urdf.q0.copy()
     robot = sobec.wwt.RobotWrapper(urdf.model, contactKey="foot_frame")
     robot.collision_model = urdf.collision_model
@@ -137,29 +139,7 @@ def load_complete_open():
     )
     robot_constraint_models = []
 
-    model.referenceConfigurations["half_sitting"] = np.array(
-        [
-            0.177111,
-            -0.117173,
-            0.692838,
-            0.0,
-            0.0,
-            -0.0,
-            1.0,
-            0.0,
-            -0.000377,
-            1.203784,
-            0.807122,
-            -0.396662,
-            0.000377,
-            0.0,
-            -0.000377,
-            -1.204769,
-            -0.81081,
-            0.39396,
-            0.000377,
-        ]
-    )
+    model.referenceConfigurations["half_sitting"] = Q0_SHARED
     model.frames[38].name = "foot_frame_right"
     model.frames[76].name = "foot_frame_left"
     robot = sobec.wwt.RobotWrapper(model, contactKey="foot_frame")
@@ -231,29 +211,7 @@ def load_complete_closed(export_joints_ids=False):
     SERIAL_JOINT_IDS_V = [i for i in range(model.nv) if i not in LOOP_JOINT_IDS_V]
 
     q_ref = pin.neutral(model)
-    q_ref[SERIAL_JOINT_IDS_Q] = np.array(
-        [
-            0.177111,
-            -0.117173,
-            0.692838,
-            0.0,
-            0.0,
-            -0.0,
-            1.0,
-            0.0,
-            -0.000377,
-            1.203784,
-            0.807122,
-            -0.396662,
-            0.000377,
-            0.0,
-            -0.000377,
-            -1.204769,
-            -0.81081,
-            0.39396,
-            0.000377,
-        ]
-    )
+    q_ref[SERIAL_JOINT_IDS_Q] = Q0_SHARED
     robot_constraint_datas = [cm.createData() for cm in robot_constraint_models]
     w = np.ones(model.nv)
     w[SERIAL_JOINT_IDS_V] = 1e5
@@ -287,6 +245,7 @@ def load_complete_closed(export_joints_ids=False):
     else:
         return robot
 
+
 def load_kangaroo():
     try:
         from example_parallel_robots import load
@@ -308,6 +267,7 @@ def load_kangaroo():
 
     import meshcat
     from pinocchio.visualize import MeshcatVisualizer
+
     viz = MeshcatVisualizer(model, collision_model, visual_model)
     viz.viewer = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
     viz.clean()
@@ -317,6 +277,3 @@ def load_kangaroo():
     viz.display(q0)
     print("Start from q0=", q0)
     return model
-
-
-load_kangaroo()

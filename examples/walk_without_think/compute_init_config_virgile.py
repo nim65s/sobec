@@ -23,6 +23,7 @@ from pinocchio.visualize import MeshcatVisualizer
 viz = MeshcatVisualizer(urdf.model, urdf.collision_model, urdf.visual_model)
 server = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
 # server = None
+# viz.clean()
 viz.initViewer(loadModel=True, viewer=server)
 
 pin.centerOfMass(model,data,q0)
@@ -80,7 +81,7 @@ opti.subject_to(drf(var_q)==0)
 opti.subject_to(dlf(var_q)==0)
 opti.subject_to(var_q[3:7] == [0,0,0,1] )
 cost = casadi.sumsqr( var_q-q0 )
-cost += 1000*(com(var_q)[2]-0.46)**2
+cost += 1000*(com(var_q)[2]-0.40)**2
 opti.minimize(cost)
 opti.solver("ipopt")
 opti.solve()
