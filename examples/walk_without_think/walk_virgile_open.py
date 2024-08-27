@@ -19,7 +19,7 @@ from loaders_virgile import load_complete_open
 # When setting them to >0, take care to uncomment the corresponding line.
 # All these lines are marked with the tag ##0##.
 
-walkParams = specific_params.WalkBattobotParams()
+walkParams = specific_params.WalkBattobotParams('open')
 walkParams.saveFile = "/tmp/walk_virgile_open.npy"
 
 # #####################################################################################
@@ -84,7 +84,8 @@ print(
 ddp = sobec.wwt.buildSolver(robot, contactPattern, walkParams, solver='FDDP')
 problem = ddp.problem
 x0s, u0s = sobec.wwt.buildInitialGuess(ddp.problem, walkParams)
-ddp.setCallbacks([croc.CallbackVerbose(), croc.CallbackLogger(), sobec.CallbackNumDiff()])
+ddp.setCallbacks([croc.CallbackVerbose(), croc.CallbackLogger()])
+# ddp.setCallbacks([croc.CallbackVerbose(), croc.CallbackLogger(), sobec.CallbackNumDiff()])
 
 with open("/tmp/virgile-repr.ascii", "w") as f:
     f.write(sobec.reprProblem(ddp.problem))
@@ -120,7 +121,9 @@ plotter.plotForces(forceRef)
 plotter.plotCom(robot.com0)
 plotter.plotFeet()
 plotter.plotFootCollision(walkParams.footMinimalDistance)
+plotter.plotJointTorques()
 print("Run ```plt.ion(); plt.show()``` to display the plots.")
+plt.ion()
 plt.show()
 # ## DEBUG ######################################################################
 # ## DEBUG ######################################################################

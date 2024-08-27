@@ -21,10 +21,11 @@ from loaders_virgile import load_complete_closed
 
 WS = True # Warm start
 
-walkParams = specific_params.WalkBattobotClosedParams()
+walkParams = specific_params.WalkBattobotParams(model='closed')
 walkParams.saveFile = "/tmp/walk_virgile_closed.npy"
 if WS:
     walkParams.guessFile = "/tmp/walk_virgile_closed_ws.npy"
+    walkParams.saveFile = "/tmp/walk_virgile_closed_warmstarted.npy"
 # #####################################################################################
 # ### LOAD ROBOT ######################################################################
 # #####################################################################################
@@ -88,14 +89,14 @@ print(
 ddp = sobec.wwt.buildSolver(robot, contactPattern, walkParams, solver='FDDP')
 problem = ddp.problem
 x0s, u0s = sobec.wwt.buildInitialGuess(ddp.problem, walkParams)
-ddp.setCallbacks([croc.CallbackVerbose(), croc.CallbackLogger(), sobec.CallbackNumDiff()])
+ddp.setCallbacks([croc.CallbackVerbose(), croc.CallbackLogger()])
 
 with open("/tmp/virgile-repr.ascii", "w") as f:
     f.write(sobec.reprProblem(ddp.problem))
     print("OCP described in /tmp/virgile-repr.ascii")
 
 croc.enable_profiler()
-ddp.solve(x0s, u0s, 1)
+ddp.solve(x0s, u0s, 100)
 
 # assert sobec.logs.checkGitRefs(ddp.getCallbacks()[1], "refs/virgile-logs.npy")
 
@@ -124,8 +125,14 @@ plotter.plotForces(forceRef)
 plotter.plotCom(robot.com0)
 plotter.plotFeet()
 plotter.plotFootCollision(walkParams.footMinimalDistance)
+plotter.plotJointTorques()
 print("Run ```plt.ion(); plt.show()``` to display the plots.")
 plt.ion()
+plt.show()
+
+cost_plotter = sobec.wwt.plotter.CostPlotter(robot.model, ddp)
+cost_plotter.setData()
+cost_plotter.plotCosts()
 plt.show()
 # ## DEBUG ######################################################################
 # ## DEBUG ######################################################################
