@@ -10,7 +10,7 @@ urdfpath = "examples/walk_without_think/model_robot_virgile/model_simplified"
 urdf = pin.RobotWrapper.BuildFromURDF(urdfpath + "/" + urdffile,urdfpath,
                                       root_joint=pin.JointModelFreeFlyer())
 urdf.q0 = pin.neutral(urdf.model)
-urdf.q0[2] = +0.5532500000000139 ## So that the feet are at z=0
+urdf.q0[2] = +0.6286147375363769 ## So that the feet are at z=0
 urdf.model.referenceConfigurations['half_sitting'] = urdf.q0.copy()
 
 model=urdf.model

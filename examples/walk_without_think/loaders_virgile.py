@@ -4,24 +4,24 @@ import sobec
 
 Q0_SHARED = np.array(
     [
-        0.01278,
+        0.012876,
         -0.000194,
-        0.586692,
+        0.560867,
         0.0,
         -0.0,
-        0.0,
+        -0.0,
         1.0,
         -0.0,
         -0.000281,
-        -0.219024,
-        -0.46888,
-        -0.249856,
+        -0.217865,
+        -0.467259,
+        -0.249394,
         0.000281,
-        0.0,
+        -0.0,
         -0.00028,
-        0.220722,
-        0.471723,
-        0.251,
+        0.219561,
+        0.470096,
+        0.250535,
         0.00028,
     ]
 )
@@ -58,7 +58,7 @@ def load_complete_open():
         return
     urdffile = "robot.urdf"
     yamlfile = "robot.yaml"
-    urdfpath = "examples/walk_without_think/model_robot_virgile/model_6d"
+    urdfpath = "examples/walk_without_think/model_robot_virgile/model_6d_45"
     (
         model,
         robot_constraint_models,
@@ -161,7 +161,7 @@ def load_complete_closed(export_joints_ids=False):
         return
     urdffile = "robot.urdf"
     yamlfile = "robot.yaml"
-    urdfpath = "examples/walk_without_think/model_robot_virgile/model_6d"
+    urdfpath = "examples/walk_without_think/model_robot_virgile/model_6d_45"
     (
         model,
         robot_constraint_models,
