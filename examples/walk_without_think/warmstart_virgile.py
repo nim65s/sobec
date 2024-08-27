@@ -20,10 +20,10 @@ def getClosedWarmstart(ws_file):
     walkParams = specific_params.WalkBattobotParams()
 
     cycle = ( [[1, 0]] * walkParams.Tsingle
-              + [[1, 1]] * walkParams.Tdouble
-              + [[0, 1]] * walkParams.Tsingle
-              + [[1, 1]] * walkParams.Tdouble
-             )
+                + [[1, 1]] * walkParams.Tdouble
+                + [[0, 1]] * walkParams.Tsingle
+                + [[1, 1]] * walkParams.Tdouble
+                )
     contactPattern = (
         []
         + [[1, 1]] * walkParams.Tstart
@@ -79,11 +79,11 @@ def getClosedWarmstart(ws_file):
     ## For other times
     weights_state = np.zeros(ndx)
     for i in SER_V[:6]:
-        weights_state[i + nv_closed] = 1 # free flyer
+        weights_state[i + nv_closed] = 1e2 # free flyer
     for i in SER_V[6:12]:
-        weights_state[i + nv_closed] = 1 # Right leg
+        weights_state[i + nv_closed] = 1e2 # Right leg
     for i in SER_V[12:]:
-        weights_state[i + nv_closed] = 1 # Left leg
+        weights_state[i + nv_closed] = 1e2 # Left leg
 
     for t, pattern in tqdm(enumerate(contactPattern[:-1])):
         contact_stack = crocoddyl.ContactModelMultiple(state, actuation.nu)
@@ -103,7 +103,7 @@ def getClosedWarmstart(ws_file):
             if not pattern[k]:
                 continue
             contact = crocoddyl.ContactModel6D(
-                state, cid, pin.SE3.Identity(), pin.WORLD, actuation.nu, walkParams.baumgartGains
+                state, cid, pin.SE3.Identity(), pin.WORLD, actuation.nu, np.array([0., 100.])
             )
             contact_stack.addContact(robot_closed.model.frames[cid].name + "_contact", contact)
         
@@ -146,8 +146,8 @@ def getClosedWarmstart(ws_file):
         q_p, v_p = x_p[:nq_closed], x_p[nq_closed:]
         x_r = solver.xs[1]
         q_r, v_r = x_r[:nq_closed], x_r[nq_closed:]
-        # assert_almost_equal(q_p[key_frames_closed["serial_q"]], q_r[key_frames_closed["serial_q"]], decimal=6)
-        # assert_almost_equal(v_p[key_frames_closed["serial_v"]], v_r[key_frames_closed["serial_v"]], decimal=6)
+        # assert_almost_equal(q_p[SER_Q], q_r[SER_Q], decimal=3)
+        # assert_almost_equal(v_p[SER_V], v_r[SER_V], decimal=3)
 
         xs_closed[t+1][LOOP_X] = solver.xs[1][LOOP_X]
         # xs_closed[t+1] = solver.xs[1]
@@ -155,6 +155,7 @@ def getClosedWarmstart(ws_file):
         us_closed[t] = solver.us[0]
 
         viz.display(xs_closed[t+1, :nq_closed])
+        print(f"Done for t = {t}")
 
     while input("Press q to quit the visualisation") != "q":
         viz.play(xs_closed[:, :nq_closed], walkParams.DT)
