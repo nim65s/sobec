@@ -51,7 +51,8 @@ def load_complete_open():
         from example_parallel_robots.loader_tools import completeRobotLoader
         from example_parallel_robots.freeze_joints import freezeJoints
         from toolbox_parallel_robots.projections import configurationProjection
-    except ImportError:
+    except ImportError as e:
+        print(e)
         print(
             "Please install the `toolbox_parallel_robots` and `example_parallel_robots` packages to run this model"
         )
@@ -154,7 +155,8 @@ def load_complete_closed(export_joints_ids=False):
         from example_parallel_robots.loader_tools import completeRobotLoader
         from example_parallel_robots.freeze_joints import freezeJoints
         from toolbox_parallel_robots.projections import configurationProjection
-    except ImportError:
+    except ImportError as e:
+        print(e)
         print(
             "Please install the `toolbox_parallel_robots` and `example_parallel_robots` packages to run this model"
         )
