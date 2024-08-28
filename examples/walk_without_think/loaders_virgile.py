@@ -1,6 +1,8 @@
 import pinocchio as pin
 import numpy as np
 import sobec
+import os
+CWD = os.path.dirname(os.path.abspath(__file__))
 
 Q0_SHARED = np.array(
     [
@@ -29,7 +31,7 @@ Q0_SHARED = np.array(
 
 def load_simplified():
     urdffile = "robot.urdf"
-    urdfpath = "examples/walk_without_think/model_robot_virgile/model_simplified"
+    urdfpath = CWD + "/model_robot_virgile/model_simplified"
     urdf = pin.RobotWrapper.BuildFromURDF(
         urdfpath + "/" + urdffile, urdfpath, root_joint=pin.JointModelFreeFlyer()
     )
@@ -59,7 +61,7 @@ def load_complete_open():
         return
     urdffile = "robot.urdf"
     yamlfile = "robot.yaml"
-    urdfpath = "examples/walk_without_think/model_robot_virgile/model_6d_45"
+    urdfpath = CWD + "/model_robot_virgile/model_6d_45"
     (
         model,
         robot_constraint_models,
@@ -163,7 +165,7 @@ def load_complete_closed(export_joints_ids=False):
         return
     urdffile = "robot.urdf"
     yamlfile = "robot.yaml"
-    urdfpath = "examples/walk_without_think/model_robot_virgile/model_6d_45"
+    urdfpath = CWD + "/model_robot_virgile/model_6d_45"
     (
         model,
         robot_constraint_models,
