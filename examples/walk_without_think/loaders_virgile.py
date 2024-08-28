@@ -49,7 +49,7 @@ def load_simplified():
 def load_complete_open():
     try:
         from example_parallel_robots.loader_tools import completeRobotLoader
-        from example_parallel_robots.freeze_joints import freezeJoints
+        from toolbox_parallel_robots.freeze_joints import freezeJoints
         from toolbox_parallel_robots.projections import configurationProjection
     except ImportError as e:
         print(e)
@@ -153,7 +153,7 @@ def load_complete_open():
 def load_complete_closed(export_joints_ids=False):
     try:
         from example_parallel_robots.loader_tools import completeRobotLoader
-        from example_parallel_robots.freeze_joints import freezeJoints
+        from toolbox_parallel_robots.freeze_joints import freezeJoints
         from toolbox_parallel_robots.projections import configurationProjection
     except ImportError as e:
         print(e)
@@ -252,7 +252,7 @@ def load_kangaroo():
     try:
         from example_parallel_robots import load
         from example_parallel_robots.loader_tools import completeRobotLoader
-        from example_parallel_robots.freeze_joints import freezeJoints
+        from toolbox_parallel_robots.freeze_joints import freezeJoints
         from toolbox_parallel_robots.projections import configurationProjection
     except ImportError:
         print(
