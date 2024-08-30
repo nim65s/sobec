@@ -4,6 +4,7 @@ import pinocchio as pin
 import crocoddyl
 import meshcat
 from pinocchio.visualize import MeshcatVisualizer
+import time as time
 
 from loaders_virgile import load_complete_open, load_complete_closed
 import sobec
@@ -27,7 +28,7 @@ def getClosedWarmstart(ws_file):
     contactPattern = (
         []
         + [[1, 1]] * walkParams.Tstart
-        + (cycle * 3)
+        + (cycle * 2)
         + [[1, 1]] * walkParams.Tend
         + [[1, 1]]
     )
@@ -79,11 +80,11 @@ def getClosedWarmstart(ws_file):
     ## For other times
     weights_state = np.zeros(ndx)
     for i in SER_V[:6]:
-        weights_state[i + nv_closed] = 1e2 # free flyer
+        weights_state[i + nv_closed] = 1 # free flyer
     for i in SER_V[6:12]:
-        weights_state[i + nv_closed] = 1e2 # Right leg
+        weights_state[i + nv_closed] = 1 # Right leg
     for i in SER_V[12:]:
-        weights_state[i + nv_closed] = 1e2 # Left leg
+        weights_state[i + nv_closed] = 1 # Left leg
 
     for t, pattern in tqdm(enumerate(contactPattern[:-1])):
         contact_stack = crocoddyl.ContactModelMultiple(state, actuation.nu)
@@ -107,8 +108,16 @@ def getClosedWarmstart(ws_file):
             )
             contact_stack.addContact(robot_closed.model.frames[cid].name + "_contact", contact)
         
+        if t == 0:
+            u_reg = us_open[t]
+        else:
+            u_reg = us_closed[t-1]
+        
         ## No cost
         cost = crocoddyl.CostModelSum(state, actuation.nu)
+        ureg_cost = crocoddyl.ResidualModelControl(state, u_reg)
+        ureg_cost = crocoddyl.CostModelResidual(state, ureg_cost)
+        cost.addCost("ureg", ureg_cost, 1e-5)
         dam = crocoddyl.DifferentialActionModelContactFwdDynamics(
             state,
             actuation,
@@ -122,7 +131,7 @@ def getClosedWarmstart(ws_file):
         xref_term_res = crocoddyl.ResidualModelState(state, xs_closed[t+1], actuation.nu)
         xref_term_act = crocoddyl.ActivationModelWeightedQuad(weights_state)
         xref_term_cost = crocoddyl.CostModelResidual(state, xref_term_act, xref_term_res)
-        term_cost.addCost("xreg", xref_term_cost, 1.0)
+        term_cost.addCost("xreg", xref_term_cost, 1e1)
 
         dam = crocoddyl.DifferentialActionModelContactFwdDynamics(
             state,
@@ -140,7 +149,7 @@ def getClosedWarmstart(ws_file):
         solver.verbose = True
         solver.setCallbacks([crocoddyl.CallbackVerbose()])
 
-        solver.solve(maxiter=1000, init_xs=[xs_closed[t], xs_closed[t+1]], init_us=[us_open[t]])
+        solver.solve(maxiter=100, init_xs=[xs_closed[t], xs_closed[t+1]], init_us=[us_open[t]])
 
         x_p = xs_closed[t+1]
         q_p, v_p = x_p[:nq_closed], x_p[nq_closed:]
@@ -156,6 +165,7 @@ def getClosedWarmstart(ws_file):
 
         viz.display(xs_closed[t+1, :nq_closed])
         print(f"Done for t = {t}")
+        # time.sleep(0.1)
 
     while input("Press q to quit the visualisation") != "q":
         viz.play(xs_closed[:, :nq_closed], walkParams.DT)

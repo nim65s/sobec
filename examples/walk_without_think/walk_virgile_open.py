@@ -46,11 +46,11 @@ except (KeyError, FileNotFoundError):
               + [[1, 1]] * walkParams.Tdouble
               + [[0, 1]] * walkParams.Tsingle
               + [[1, 1]] * walkParams.Tdouble
-             )
+            )
     contactPattern = (
         []
         + [[1, 1]] * walkParams.Tstart
-        + (cycle * 3)
+        + (cycle * 2)
         + [[1, 1]] * walkParams.Tend
         + [[1, 1]]
     )
@@ -92,7 +92,7 @@ with open("/tmp/virgile-repr.ascii", "w") as f:
     print("OCP described in /tmp/virgile-repr.ascii")
 
 croc.enable_profiler()
-ddp.solve(x0s, u0s, 200)
+ddp.solve(x0s, u0s, 100)
 
 # assert sobec.logs.checkGitRefs(ddp.getCallbacks()[1], "refs/virgile-logs.npy")
 

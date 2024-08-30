@@ -51,11 +51,11 @@ except (KeyError, FileNotFoundError):
               + [[1, 1]] * walkParams.Tdouble
               + [[0, 1]] * walkParams.Tsingle
               + [[1, 1]] * walkParams.Tdouble
-             )
+            )
     contactPattern = (
         []
         + [[1, 1]] * walkParams.Tstart
-        + (cycle * 3)
+        + (cycle * 2)
         + [[1, 1]] * walkParams.Tend
         + [[1, 1]]
     )

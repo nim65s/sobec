@@ -61,7 +61,7 @@ def load_complete_open():
         return
     urdffile = "robot.urdf"
     yamlfile = "robot.yaml"
-    urdfpath = CWD + "/model_robot_virgile/model_6d_45"
+    urdfpath = CWD + "/model_robot_virgile/model_6d"
     (
         model,
         robot_constraint_models,
@@ -165,7 +165,7 @@ def load_complete_closed(export_joints_ids=False):
         return
     urdffile = "robot.urdf"
     yamlfile = "robot.yaml"
-    urdfpath = CWD + "/model_robot_virgile/model_6d_45"
+    urdfpath = CWD + "/model_robot_virgile/model_6d"
     (
         model,
         robot_constraint_models,
