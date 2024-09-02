@@ -71,6 +71,8 @@ class WalkBattobotParams(swparams.WalkParams):
     Tsingle = int(0.8 / DT)  
     Tdouble = roundToOdd(0.05 / DT)  
     Tend = int(0.3 / DT)
+    Tmpc = int(1.4 / DT)
+    Tsimu = int(10 / DT)
     transitionDuration = (Tdouble - 1) // 2
 
     vcomRef = np.r_[ 0.2, 0,0 ]
@@ -88,8 +90,8 @@ class WalkBattobotParams(swparams.WalkParams):
     impactVelocityWeight = 10000
     refForceWeight = 1
     refMainJointsAtImpactWeight = 0
-    refStateWeight = 0.2
-    refTorqueWeight = 0.001
+    refStateWeight = 1
+    refTorqueWeight = 0.1
     stateTerminalWeight = 20
     vcomWeight = 100
     verticalFootVelWeight = 0 # 20
