@@ -47,7 +47,7 @@ class WalkForWanOCPParams(swparams.WalkParams):
     # impactVelocityWeight = 200
     # refFootFlyingAltitude = 0.03
     # flyHighSlope = 5 / refFootFlyingAltitude
-    vcomRef = np.array([0.3, 0, 0])
+    vcomRef = np.array([0.2, 0, 0])
     baumgartGains = np.array([0, 0])
     # minimalNormalForce = 0.0
     # vcomWeight = 0
@@ -67,50 +67,54 @@ class WalkBattobotParams(swparams.WalkParams):
     ]
 
     DT = 0.015
-    Tstart = int(0.3 / DT)
-    Tsingle = int(0.8 / DT)  
-    Tdouble = roundToOdd(0.05 / DT)  
-    Tend = int(0.3 / DT)
+    Tstart = int(0.2 / DT)
+    Tsingle = int(0.4 / DT)  
+    Tdouble = roundToOdd(0.01 / DT)
+    Tend = int(0.2 / DT)
     Tmpc = int(1.4 / DT)
     Tsimu = int(10 / DT)
     transitionDuration = (Tdouble - 1) // 2
 
-    vcomRef = np.r_[ 0.2, 0,0 ]
+    vcomRef = np.r_[ 0.4, 0,0 ]
+    comRef = np.r_[ 0.0, 0, 0.460 ]
     
     centerOfFrictionWeight = 0
-    comWeight = 1000
-    coneAxisWeight =  0.0002
+    comWeight = 100 ### 100
+    coneAxisWeight =  0.000
     conePenaltyWeight = 0
-    copWeight = 1
-    feetCollisionWeight = 1000 # 1000
-    flyHighWeight =  200
-    groundColWeight = 10
-    impactAltitudeWeight = 20000
-    impactRotationWeight = 200
-    impactVelocityWeight = 10000
-    refForceWeight = 1
+    copWeight = 10
+    feetCollisionWeight = 0 # 1000
+    flyHighWeight =  100
+    groundColWeight = 0
+    impactAltitudeWeight = 1e4  # /
+    impactRotationWeight = 1e4  # /
+    impactVelocityWeight = 1e4  # /
+    refForceWeight = 1       # /
     refMainJointsAtImpactWeight = 0
-    refStateWeight = 1
-    refTorqueWeight = 0.1
-    stateTerminalWeight = 20
-    vcomWeight = 100
+    refStateWeight = 0.15       # /
+    refTorqueWeight = 0.02     # /
+    stateTerminalWeight = 100
+    vcomWeight = 1e3
     verticalFootVelWeight = 0 # 20
+    jointLimitWeight = 0
+    refJointAcceleration = 0.0
 
     flyHighSlope = 3/2e-2
+    slope = 0.0000
     
     def __init__(self, model="simplified"):
         swparams.WalkParams.__init__(self, "talos_legs")
         if model == 'open':
             basisQWeights = [0,0,0,50,50,0]
             legQWeights = [
-                5, 1, 1, # hip z, x, y
-                1, # knee (passive)
+                20, 10, 1, # hip z, x, y
+                4, # knee (passive)
                 1, 1, # ankle x, y
             ]
             basisVWeights = [0,0,0,3,3,1]
             legVWeights = [
-                5, 1, 1, # hip z, x, y
-                1, # knee (passive)
+                10, 5, 1, # hip z, x, y
+                2, # knee (passive)
                 1, 1, # ankle x, y
             ]
             self.stateImportance = np.array(
@@ -118,45 +122,45 @@ class WalkBattobotParams(swparams.WalkParams):
             )
             nv = len(basisVWeights) + 2* len(legVWeights)
             self.stateTerminalImportance = np.array([3, 3, 0, 0, 0, 30] + [0] * (nv - 6) + [1] * nv)
-            self.controlImportance = np.array([1] * 12)
-            self.controlImportance[1] = 1
-            self.controlImportance[7] = 1
+            self.accImportance = np.array([0]*6 + [1] * 12)
         if model == 'closed':
+            eps = 0
             basisQWeights = [0,0,0,50,50,0]
             legQWeights = [
-                5, 1, 1, # hip z, x, y
-                1, # knee (passive)
+                20, 3, 1, # hip z, x, y
+                4, # knee (passive)
                 1, 1, # ankle x, y
-                0, # knee (actuated)
-                0, 0, 0, # spherical ankle
-                0, 0, 0, # spherical ankle
-                0, 0, # Ujoint knee
-                0, # calf motor
-                0, 0, # ujoint ankles-shins
-                0, # calf motor
-                0, 0, # ujoint ankles-shins
-                0, 0, 0, # spherical hip
+                eps, # knee (actuated)
+                eps, eps, eps, # spherical ankle
+                eps, eps, eps, # spherical ankle
+                eps, eps, # Ujoint knee
+                eps, # calf motor
+                eps, eps, # ujoint ankles-shins
+                eps, # calf motor
+                eps, eps, # ujoint ankles-shins
+                eps, eps, eps, # spherical hip
             ]
             basisVWeights = [0,0,0,3,3,1]
             legVWeights = [
-                5, 1, 1, # hip z, x, y
-                1, # knee (passive)
+                10, 3, 1, # hip z, x, y
+                2, # knee (passive)
                 1, 1, # ankle x, y
-                0, # knee (actuated)
-                0, 0, 0, # spherical ankle
-                0, 0, 0, # spherical ankle
-                0, 0, # Ujoint knee
-                0, # calf motor
-                0, 0, # ujoint ankles-shins
-                0, # calf motor
-                0, 0, # ujoint ankles-shins
-                0, 0, 0, # spherical hip
+                eps, # knee (actuated)
+                eps, eps, eps, # spherical ankle
+                eps, eps, eps, # spherical ankle
+                eps, eps, # Ujoint knee
+                eps, # calf motor
+                eps, eps, # ujoint ankles-shins
+                eps, # calf motor
+                eps, eps, # ujoint ankles-shins
+                eps, eps, eps, # spherical hip
             ]
             self.stateImportance = np.array(
                 basisQWeights + legQWeights * 2 + basisVWeights + legVWeights * 2
             )
-            nv = len(basisVWeights) + 2* len(legVWeights)
-            self.stateTerminalImportance = np.array([3, 3, 0, 0, 0, 30] + [0] * (nv - 6) + [1] * nv)
+            velocityTarget = np.zeros(2*len(legVWeights))
+            velocityTarget[np.nonzero(legVWeights*2)] = 1
+            self.stateTerminalImportance = np.array([3, 3, 0, 0, 0, 30] + [0] * (2*len(legVWeights)) + [0, 0, 0, 0, 0, 0] + velocityTarget.tolist())
 
 class WalkParams(swparams.WalkParams):
     """

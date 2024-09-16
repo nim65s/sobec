@@ -1,0 +1,22 @@
+figure.figsize : 2.6, 2.4
+font.size : 14
+text.usetex: False
+axes.titlesize : 10
+lines.linewidth : 1
+lines.markersize : 7
+xtick.labelsize : 7
+ytick.labelsize : 7
+xtick.direction : inout
+ytick.direction : inout
+axes.grid : False
+axes.labelsize : x-small
+axes.formatter.use_mathtext : True
+legend.fontsize : x-small
+legend.fancybox: False
+legend.shadow: False
+legend.markerscale: 0.5
+legend.handlelength: 0.5
+legend.borderpad: 0.2
+figure.constrained_layout.use: True
+savefig.bbox : tight
+figure.autolayout: True

@@ -188,8 +188,9 @@ def buildRunningModels(robotWrapper, contactPattern, params):
 
                 print("Impact %s at time %s" % (cid, t))
                 if p.impactAltitudeWeight > 0:
+                    impactPosRef = np.array([0, 0, p.slope * t])
                     impactResidual = croc.ResidualModelFrameTranslation(
-                        state, cid, np.zeros(3), actuation.nu
+                        state, cid, impactPosRef, actuation.nu
                     )
                     impactAct = croc.ActivationModelWeightedQuad(np.array([0, 0, 1]))
                     impactCost = croc.CostModelResidual(state, impactAct, impactResidual)
@@ -452,8 +453,7 @@ def buildSolver(robotWrapper, contactPattern, walkParams, solver='FDDP'):
 def buildInitialGuess(problem, walkParams):
     if walkParams.guessFile is not None:
         try:
-            guess = np.load(walkParams.guessFile, allow_pickle=True)[()]
-            print('Load "%s"!' % walkParams.guessFile)
+            guess = sobec.wwt.load_traj(walkParams.guessFile)
             x0s = [x for x in guess["xs"]]
             u0s = [u for u in guess["us"]]
         except (FileNotFoundError, KeyError):

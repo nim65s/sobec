@@ -8,7 +8,7 @@ from numpy.linalg import norm, pinv, inv, svd, eig  # noqa: F401
 import sobec
 import sobec.walk_without_think.plotter
 import specific_params
-from loaders_virgile import load_complete_closed
+from loaders.loaders_virgile import load_complete_closed
 
 # #####################################################################################
 # ## TUNING ###########################################################################
@@ -19,18 +19,41 @@ from loaders_virgile import load_complete_closed
 # When setting them to >0, take care to uncomment the corresponding line.
 # All these lines are marked with the tag ##0##.
 
-WS = True # Warm start
+import sys
+print(sys.argv)
 
-walkParams = specific_params.WalkBattobotParams(model='closed')
-walkParams.saveFile = "/tmp/walk_virgile_closed.npy"
-if WS:
-    walkParams.guessFile = "/tmp/walk_virgile_closed_ws.npy"
-    walkParams.saveFile = "/tmp/walk_virgile_closed_warmstarted.npy"
+walkParams = specific_params.WalkBattobotParams('closed')
+if len(sys.argv) > 1:
+    WS = bool(sys.argv[1])
+    walkParams.saveFile = sys.argv[2]
+    walkParams.guessFile = sys.argv[3] if sys.argv[3] != "" else None
+    # base_height = round(float(sys.argv[4])*1e-3, 5)
+    base_height = 0.575
+    comWeight = int(sys.argv[4])
+    walkParams.comWeight = comWeight
+    walkParams.vcomRef[0] = round(float(sys.argv[5])*1e-2, 5)
+    walkParams.slope = round(float(sys.argv[6])*1e-4, 5)
+    autosave = sys.argv[7]
+else:
+    WS = False
+    walkParams.saveFile = "/tmp/stairs_virgile_closed.npy"
+    if WS:
+        walkParams.guessFile = "/tmp/stairs_virgile_open_warmstarted_ws.npy"
+        walkParams.saveFile = "/tmp/stairs_virgile_open_warmstarted_warmstarted.npy"
+    base_height = 0.575
+    walkParams.vcomRef[0] = 0.4
+    walkParams.comWeight = 1e3
+    autosave = False
+
+print("WS", WS)
+print("slope", walkParams.slope)
+print("velocity", walkParams.vcomRef)
+
 # #####################################################################################
 # ### LOAD ROBOT ######################################################################
 # #####################################################################################
 
-robot = load_complete_closed()
+robot = load_complete_closed(base_height=base_height)
 assert len(walkParams.stateImportance) == robot.model.nv * 2
 assert len(walkParams.stateTerminalImportance) == robot.model.nv * 2
 
@@ -55,7 +78,7 @@ except (KeyError, FileNotFoundError):
     contactPattern = (
         []
         + [[1, 1]] * walkParams.Tstart
-        + (cycle * 2)
+        + (cycle * 4)
         + [[1, 1]] * walkParams.Tend
         + [[1, 1]]
     )
@@ -96,8 +119,9 @@ with open("/tmp/virgile-repr.ascii", "w") as f:
     print("OCP described in /tmp/virgile-repr.ascii")
 
 croc.enable_profiler()
-ddp.solve(x0s, u0s, 100)
-
+# ddp.alphas = [1.0, 0.1, 0.01]
+# ddp.solve(x0s, u0s, 200, init_reg=0.001)
+ddp.solve(init_xs=x0s, init_us=u0s, maxiter=200, init_reg=1e-3, is_feasible=False)
 # assert sobec.logs.checkGitRefs(ddp.getCallbacks()[1], "refs/virgile-logs.npy")
 
 # ### PLOT ######################################################################
@@ -126,6 +150,7 @@ plotter.plotCom(robot.com0)
 plotter.plotFeet()
 plotter.plotFootCollision(walkParams.footMinimalDistance)
 plotter.plotJointTorques()
+plotter.plotComAndCopInXY()
 print("Run ```plt.ion(); plt.show()``` to display the plots.")
 plt.ion()
 plt.show()
@@ -141,11 +166,14 @@ plt.show()
 pin.SE3.__repr__ = pin.SE3.__str__
 np.set_printoptions(precision=2, linewidth=300, suppress=True, threshold=10000)
 
-while input("Press q to quit the visualisation") != "q":
-    viz.play(np.array(ddp.xs)[:, : robot.model.nq], walkParams.DT)
+if not autosave:
+    while input("Press q to quit the visualisation") != "q":
+        viz.play(np.array(ddp.xs)[:, : robot.model.nq], walkParams.DT)
 
-if walkParams.saveFile is not None and input("Save trajectory? (y/n)") == "y":
-    sobec.wwt.save_traj(np.array(sol.xs), filename=walkParams.saveFile)
+    if walkParams.saveFile is not None and input("Save trajectory? (y/n)") == "y":
+        sobec.wwt.save_traj(xs=np.array(sol.xs), us=np.array(sol.us), fs=sol.fs0, acs=sol.acs, n_iter=ddp.iter, filename=walkParams.saveFile)
+else:
+    sobec.wwt.save_traj(xs=np.array(sol.xs), us=np.array(sol.us), fs=sol.fs0, acs=sol.acs, n_iter=ddp.iter, filename=walkParams.saveFile)
 
 # imgs = []
 # import time

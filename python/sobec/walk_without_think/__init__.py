@@ -7,7 +7,7 @@ from .params import WalkParams
 from .robot_wrapper import RobotWrapper
 from .miscdisp import CallbackMPCWalk, dispocp
 from .yaml_params import yamlReadToParams, yamlWriteParams
-from .save_traj import save_traj, loadProblemConfig
+from .save_traj import save_traj, loadProblemConfig, saveProblemConfig, load_traj
 from .actuation_matrix import ActuationModelMatrix
 
 # Don't include plotter by default, it breaks bullet

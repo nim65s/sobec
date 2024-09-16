@@ -4,34 +4,9 @@ import sobec
 import os
 CWD = os.path.dirname(os.path.abspath(__file__))
 
-Q0_SHARED = np.array(
-    [
-        0.012876,
-        -0.000194,
-        0.560867,
-        0.0,
-        -0.0,
-        -0.0,
-        1.0,
-        -0.0,
-        -0.000281,
-        -0.217865,
-        -0.467259,
-        -0.249394,
-        0.000281,
-        -0.0,
-        -0.00028,
-        0.219561,
-        0.470096,
-        0.250535,
-        0.00028,
-    ]
-)
-
-
-def load_simplified():
+def load_simplified(base_height=0.575):
     urdffile = "robot.urdf"
-    urdfpath = CWD + "/model_robot_virgile/model_simplified"
+    urdfpath = CWD + "/../model_robot_virgile/model_simplified"
     urdf = pin.RobotWrapper.BuildFromURDF(
         urdfpath + "/" + urdffile, urdfpath, root_joint=pin.JointModelFreeFlyer()
     )
@@ -39,6 +14,7 @@ def load_simplified():
     # - both foot flat on the ground
     # - COM in between the two feet
     # - torso at 0 orientation
+    Q0_SHARED = np.load(f"{CWD}/../results/initial_configs/q0_{str(base_height).replace('.', '_')}.npy")
     urdf.q0 = Q0_SHARED
     urdf.model.referenceConfigurations["half_sitting"] = urdf.q0.copy()
     robot = sobec.wwt.RobotWrapper(urdf.model, contactKey="foot_frame")
@@ -48,7 +24,8 @@ def load_simplified():
     return robot
 
 
-def load_complete_open():
+def load_complete_open(base_height=0.575):
+    Q0_SHARED = np.load(f"{CWD}/../results/initial_configs/q0_{str(base_height).replace('.', '_')}.npy")
     try:
         from example_parallel_robots.loader_tools import completeRobotLoader
         from toolbox_parallel_robots.freeze_joints import freezeJoints
@@ -61,7 +38,7 @@ def load_complete_open():
         return
     urdffile = "robot.urdf"
     yamlfile = "robot.yaml"
-    urdfpath = CWD + "/model_robot_virgile/model_6d"
+    urdfpath = CWD + "/../model_robot_virgile/model_6d"
     (
         model,
         robot_constraint_models,
@@ -69,28 +46,7 @@ def load_complete_open():
         visual_model,
         collision_model,
     ) = completeRobotLoader(urdfpath, urdffile, yamlfile, freeflyer=True)
-    missing_inertia = [
-        8,
-        9,
-        10,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        26,
-        27,
-        28,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-    ]
+    missing_inertia = [10, 13, 16, 28, 31, 34]
     for i in missing_inertia:
         model.inertias[i].inertia += np.eye(3) * 1e-3
 
@@ -145,14 +101,23 @@ def load_complete_open():
     model.referenceConfigurations["half_sitting"] = Q0_SHARED
     model.frames[38].name = "foot_frame_right"
     model.frames[76].name = "foot_frame_left"
+
+    # Add joint limits
+    model.upperPositionLimit[10] = 0.311
+    model.lowerPositionLimit[16] = -0.311
+
     robot = sobec.wwt.RobotWrapper(model, contactKey="foot_frame")
     robot.collision_model = collision_model
     robot.visual_model = visual_model
     assert len(robot.contactIds) == 2
+    
+    armature = np.concatenate((np.zeros(6), np.full(model.nv - 6, 1e-3)))
+    robot.model.armature = armature
+    
     return robot
 
-
-def load_complete_closed(export_joints_ids=False):
+def load_complete_closed(export_joints_ids=False, base_height=0.575):
+    Q0_SHARED = np.load(f"{CWD}/../results/initial_configs/q0_{str(base_height).replace('.', '_')}.npy")
     try:
         from example_parallel_robots.loader_tools import completeRobotLoader
         from toolbox_parallel_robots.freeze_joints import freezeJoints
@@ -165,7 +130,7 @@ def load_complete_closed(export_joints_ids=False):
         return
     urdffile = "robot.urdf"
     yamlfile = "robot.yaml"
-    urdfpath = CWD + "/model_robot_virgile/model_6d"
+    urdfpath = CWD + "/../model_robot_virgile/model_6d"
     (
         model,
         robot_constraint_models,
@@ -173,6 +138,10 @@ def load_complete_closed(export_joints_ids=False):
         visual_model,
         collision_model,
     ) = completeRobotLoader(urdfpath, urdffile, yamlfile, freeflyer=True)
+
+    missing_inertia = [10, 13, 16, 28, 31, 34]
+    for i in missing_inertia:
+        model.inertias[i].inertia += np.eye(3) * 1e-3
 
     joints_lock_names = [
         # Right
@@ -233,12 +202,22 @@ def load_complete_closed(export_joints_ids=False):
 
     model.frames[14].name = "foot_frame_right"
     model.frames[58].name = "foot_frame_left"
+
+    # Add joint limits
+    model.upperPositionLimit[10] = 0.311
+    model.lowerPositionLimit[37] = -0.311
+
     robot = sobec.wwt.RobotWrapper(model, contactKey="foot_frame", closed_loop=True)
     robot.collision_model = collision_model
     robot.visual_model = visual_model
     robot.actuationModel = actuation_model
     robot.loop_constraints_models = robot_constraint_models
     assert len(robot.contactIds) == 2
+
+    armature = np.zeros(model.nv)
+    for i in actuation_model.mot_ids_v:
+        armature[i] = 1e-3
+    robot.model.armature = armature
     if export_joints_ids:
         return robot, (
             SERIAL_JOINT_IDS_Q,
@@ -248,7 +227,6 @@ def load_complete_closed(export_joints_ids=False):
         )
     else:
         return robot
-
 
 def load_kangaroo():
     try:

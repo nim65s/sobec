@@ -1,7 +1,6 @@
 import numpy as np
 
-
-def save_traj(xs, us=None, fs=None, acs=None, filename="/tmp/ddp.npy"):
+def save_traj(xs, us=None, fs=None, acs=None, n_iter=None, filename="/tmp/ddp.npy"):
     data = {"xs": xs}
     if us is not None:
         data["us"] = us
@@ -9,10 +8,16 @@ def save_traj(xs, us=None, fs=None, acs=None, filename="/tmp/ddp.npy"):
         data["acs"] = acs
     if fs is not None:
         data["fs"] = fs
+    if n_iter is not None:
+        data["n_iter"] = n_iter
     with open(filename, "wb") as f:
         np.save(f, data)
     print('Save "%s"!' % filename)
 
+def load_traj(filename="/tmp/ddp.npy"):
+    data = np.load(filename, allow_pickle=True)[()]
+    print('Load "%s"!' % filename)
+    return data
 
 def getContactActivationFromAModel(contactIds, action):
     """Return a list of binary values representing the contact activation of an action

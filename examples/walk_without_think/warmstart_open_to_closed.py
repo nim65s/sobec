@@ -6,19 +6,24 @@ import meshcat
 from pinocchio.visualize import MeshcatVisualizer
 import time as time
 
-from loaders_virgile import load_complete_open, load_complete_closed
+from loaders.loaders_virgile import load_complete_open, load_complete_closed
 import sobec
 from sobec.walk_without_think.actuation_matrix import ActuationModelMatrix
 import specific_params
 
 from tqdm import tqdm
 
-def getClosedWarmstart(ws_file):
+def getClosedWarmstart(ws_file, autosave=False, base_height=0.575, slope=0.0, velocity=0.2, comWeight=0):
     ws = np.load(f"{ws_file}", allow_pickle=True)[()]
     xs_open = np.array(ws["xs"])
     us_open = np.array(ws["us"])
+    fs_open = np.array(ws["fs"])
+    acs_open = np.array(ws["acs"])
 
     walkParams = specific_params.WalkBattobotParams()
+    walkParams.vcomRef[0] = velocity
+    walkParams.comWeight = comWeight
+    walkParams.slope = slope
 
     cycle = ( [[1, 0]] * walkParams.Tsingle
                 + [[1, 1]] * walkParams.Tdouble
@@ -28,13 +33,13 @@ def getClosedWarmstart(ws_file):
     contactPattern = (
         []
         + [[1, 1]] * walkParams.Tstart
-        + (cycle * 2)
+        + (cycle * 4)
         + [[1, 1]] * walkParams.Tend
         + [[1, 1]]
     )
 
-    robot_open = load_complete_open()
-    robot_closed, (SER_Q, SER_V, LOOP_Q, LOOP_V) = load_complete_closed(export_joints_ids=True)
+    robot_open = load_complete_open(base_height=base_height)
+    robot_closed, (SER_Q, SER_V, LOOP_Q, LOOP_V) = load_complete_closed(export_joints_ids=True, base_height=base_height)
 
     viz = MeshcatVisualizer(robot_closed.model, robot_closed.collision_model, robot_closed.visual_model)
     viz.viewer = meshcat.Visualizer(zmq_url="tcp://127.0.0.1:6000")
@@ -108,16 +113,27 @@ def getClosedWarmstart(ws_file):
             )
             contact_stack.addContact(robot_closed.model.frames[cid].name + "_contact", contact)
         
-        if t == 0:
-            u_reg = us_open[t]
-        else:
-            u_reg = us_closed[t-1]
-        
-        ## No cost
+        ## Running costs
         cost = crocoddyl.CostModelSum(state, actuation.nu)
-        ureg_cost = crocoddyl.ResidualModelControl(state, u_reg)
-        ureg_cost = crocoddyl.CostModelResidual(state, ureg_cost)
-        cost.addCost("ureg", ureg_cost, 1e-5)
+        # Control
+        uref = np.array([us_open[t][i] for i in [0, 1, 2, 5, 4, 3, 6, 7, 8, 11, 10, 9]])
+        print(uref)
+        ureg_res = crocoddyl.ResidualModelControl(state, uref)
+        ureg_cost = crocoddyl.CostModelResidual(state, ureg_res)
+        # cost.addCost("ureg", ureg_cost, 1e-3)
+        for k, cid in enumerate(robot_closed.contactIds):
+            if not pattern[k]:
+                continue
+            # Force
+            freg_res = crocoddyl.ResidualModelContactForce(state, cid, pin.Force(fs_open[t][6*k:6*(k+1)]), 6, actuation.nu)
+            freg_cost = crocoddyl.CostModelResidual(state, freg_res)
+            cost.addCost(f"freg_{k}", freg_cost, 1e-3)
+        # Loop contact forces # ! Not implemented in Crocoddyl yet
+        # for i, cm in enumerate(robot_closed.loop_constraints_models):
+        #     freg_res = crocoddyl.ResidualModelContactForce(state, cm.joint1_id, pin.Force.Zero(), 6, actuation.nu)
+        #     freg_cost = crocoddyl.CostModelResidual(state, freg_res)
+        #     cost.addCost(f"freg_loop_{i}", freg_cost, 1e0)
+
         dam = crocoddyl.DifferentialActionModelContactFwdDynamics(
             state,
             actuation,
@@ -131,7 +147,7 @@ def getClosedWarmstart(ws_file):
         xref_term_res = crocoddyl.ResidualModelState(state, xs_closed[t+1], actuation.nu)
         xref_term_act = crocoddyl.ActivationModelWeightedQuad(weights_state)
         xref_term_cost = crocoddyl.CostModelResidual(state, xref_term_act, xref_term_res)
-        term_cost.addCost("xreg", xref_term_cost, 1e1)
+        term_cost.addCost("xreg", xref_term_cost, 1e10)
 
         dam = crocoddyl.DifferentialActionModelContactFwdDynamics(
             state,
@@ -163,17 +179,38 @@ def getClosedWarmstart(ws_file):
         assert_almost_equal(xs_closed[t], solver.xs[0])
         us_closed[t] = solver.us[0]
 
+        sol = sobec.wwt.Solution(robot_closed, solver)
         viz.display(xs_closed[t+1, :nq_closed])
-        print(f"Done for t = {t}")
         # time.sleep(0.1)
-
-    while input("Press q to quit the visualisation") != "q":
-        viz.play(xs_closed[:, :nq_closed], walkParams.DT)
+    if not autosave:
+        while input("Press q to quit the visualisation") != "q" and not autosave:
+            viz.play(xs_closed[:, :nq_closed], walkParams.DT)
     return(xs_closed, us_closed)
 
 if __name__ == "__main__":
-    ws_file = "/tmp/walk_virgile_open.npy"
-    xs_closed, us_closed = getClosedWarmstart(ws_file)
-    if input("Do you want to save the warmstart? (y/n)") == "y":
-        save_file = "/tmp/walk_virgile_closed_ws.npy"
+    import sys
+
+    if len(sys.argv) > 1:
+        ws_file = sys.argv[1]
+        save_file = sys.argv[2]
+        # b = round(float(sys.argv[3])*1e-3, 5)
+        b = 0.575
+        w = int(sys.argv[3])
+        v = round(float(sys.argv[4])*1e-2, 5)
+        s = round(float(sys.argv[5])*1e-4, 5)
+        autosave = sys.argv[6]
+    else:
+        ws_file = "/tmp/stairs_virgile_open_10000.npy"
+        save_file = "/tmp/stairs_virgile_closed_ws.npy"
+        b = 0.575
+        w = 500
+        s = 0.0
+        v = 0.4
+        autosave = False
+        
+    xs_closed, us_closed = getClosedWarmstart(ws_file, autosave, base_height=b, slope=s, velocity=v, comWeight=w)
+    if not autosave:
+        if input("Do you want to save the warmstart? (y/n)") == "y":
+            sobec.wwt.save_traj(np.array(xs_closed), np.array(us_closed), filename=save_file)
+    else:
         sobec.wwt.save_traj(np.array(xs_closed), np.array(us_closed), filename=save_file)
