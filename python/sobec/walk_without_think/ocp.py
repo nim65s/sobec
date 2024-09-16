@@ -15,7 +15,7 @@ if sys.version_info.major < 3:
     FileNotFoundError = IOError
 
 
-def buildRunningModels(robotWrapper, contactPattern, params):
+def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=False):
     p = params
     robot = robotWrapper
 
@@ -65,8 +65,9 @@ def buildRunningModels(robotWrapper, contactPattern, params):
             )
             contacts.addContact(f"loop_contact_{k}", contact)
 
-        # Costs
+        # Costs and constraints
         costs = croc.CostModelSum(state, actuation.nu)
+        constraints = croc.ConstraintModelManager(state, actuation.nu)
 
         if p.refStateWeight > 0:
             xRegResidual = croc.ResidualModelState(state, robot.x0, actuation.nu)
@@ -108,10 +109,21 @@ def buildRunningModels(robotWrapper, contactPattern, params):
                 copAct = croc.ActivationModelWeightedQuad(
                     np.array([1.0 / p.footSize**2] * 2)
                 )
-                copCost = croc.CostModelResidual(state, copAct, copResidual)
-                costs.addCost(
-                    "%s_cop" % robot.model.frames[cid].name, copCost, p.copWeight
-                )
+                if with_constraints:
+                    copConstraint = croc.ConstraintModelResidual(
+                        state,
+                        copResidual,
+                        np.array([-p.footSize, -p.footSize]),
+                        np.array([p.footSize, p.footSize]),
+                    )
+                    constraints.addConstraint(
+                        "%s_cop" % robot.model.frames[cid].name, copConstraint
+                    )
+                else:
+                    copCost = croc.CostModelResidual(state, copAct, copResidual)
+                    costs.addCost(
+                        "%s_cop" % robot.model.frames[cid].name, copCost, p.copWeight
+                    )
 
             if p.centerOfFrictionWeight > 0:
                 cofResidual = sobec.ResidualModelCenterOfPressure(state, cid, actuation.nu)
@@ -192,13 +204,24 @@ def buildRunningModels(robotWrapper, contactPattern, params):
                     impactResidual = croc.ResidualModelFrameTranslation(
                         state, cid, impactPosRef, actuation.nu
                     )
-                    impactAct = croc.ActivationModelWeightedQuad(np.array([0, 0, 1]))
-                    impactCost = croc.CostModelResidual(state, impactAct, impactResidual)
-                    costs.addCost(
-                        "%s_altitudeimpact" % robot.model.frames[cid].name,
-                        impactCost,
-                        p.impactAltitudeWeight / p.DT,
-                    )
+                    if with_constraints:
+                        constraints.addConstraint(
+                            "%s_altitudeimpact" % robot.model.frames[cid].name,
+                            croc.ConstraintModelResidual(
+                                state,
+                                impactResidual,
+                                np.array([-np.inf, -np.inf, -1e-6]),
+                                np.array([np.inf, np.inf, 1e-6]),
+                            ),
+                        )
+                    else:
+                        impactAct = croc.ActivationModelWeightedQuad(np.array([0, 0, 1]))
+                        impactCost = croc.CostModelResidual(state, impactAct, impactResidual)
+                        costs.addCost(
+                            "%s_altitudeimpact" % robot.model.frames[cid].name,
+                            impactCost,
+                            p.impactAltitudeWeight / p.DT,
+                        )
 
                 if p.impactVelocityWeight > 0:
                     impactVelResidual = croc.ResidualModelFrameVelocity(
@@ -208,26 +231,48 @@ def buildRunningModels(robotWrapper, contactPattern, params):
                         pin.ReferenceFrame.LOCAL,
                         actuation.nu,
                     )
-                    impactVelCost = croc.CostModelResidual(state, impactVelResidual)
-                    costs.addCost(
-                        "%s_velimpact" % robot.model.frames[cid].name,
-                        impactVelCost,
-                        p.impactVelocityWeight / p.DT,
-                    )
+                    if with_constraints:
+                        constraints.addConstraint(
+                            "%s_velimpact" % robot.model.frames[cid].name,
+                            croc.ConstraintModelResidual(
+                                state,
+                                impactVelResidual,
+                                np.array([-1e-6]*6),
+                                np.array([1e-6]*6),
+                            ),
+                        )
+                    else:
+                        impactVelCost = croc.CostModelResidual(state, impactVelResidual)
+                        costs.addCost(
+                            "%s_velimpact" % robot.model.frames[cid].name,
+                            impactVelCost,
+                            p.impactVelocityWeight / p.DT,
+                        )
 
                 if p.impactRotationWeight > 0:
                     impactRotResidual = croc.ResidualModelFrameRotation(
                         state, cid, np.eye(3), actuation.nu
                     )
-                    impactRotAct = croc.ActivationModelWeightedQuad(np.array([1, 1, 0]))
-                    impactRotCost = croc.CostModelResidual(
-                        state, impactRotAct, impactRotResidual
-                    )
-                    costs.addCost(
-                        "%s_rotimpact" % robot.model.frames[cid].name,
-                        impactRotCost,
-                        p.impactRotationWeight / p.DT,
-                    )
+                    if with_constraints:
+                        constraints.addConstraint(
+                            "%s_rotimpact" % robot.model.frames[cid].name,
+                            croc.ConstraintModelResidual(
+                                state,
+                                impactRotResidual,
+                                np.array([-1e-6, -1e-6, -np.inf]),
+                                np.array([1e-6, 1e-6, np.inf]),
+                            ),
+                        )
+                    else:
+                        impactRotAct = croc.ActivationModelWeightedQuad(np.array([1, 1, 0]))
+                        impactRotCost = croc.CostModelResidual(
+                            state, impactRotAct, impactRotResidual
+                        )
+                        costs.addCost(
+                            "%s_rotimpact" % robot.model.frames[cid].name,
+                            impactRotCost,
+                            p.impactRotationWeight / p.DT,
+                        )
 
                 if p.refMainJointsAtImpactWeight > 0:
                     impactRefJointsResidual = croc.ResidualModelState(
@@ -340,9 +385,48 @@ def buildRunningModels(robotWrapper, contactPattern, params):
                             p.feetCollisionWeight,
                         )
 
+        # Joint limits
+        if p.jointLimitWeight > 0:
+            maxfloat = sys.float_info.max
+            xLimitResidual = croc.ResidualModelState(state, robot.x0, actuation.nu)
+            lowerBoundsq = robot.model.lowerPositionLimit
+            upperBoundsq = robot.model.upperPositionLimit
+
+            lowerBoundsv = -np.ones(robot.model.nv)*maxfloat
+            upperBoundsv = np.ones(robot.model.nv)*maxfloat
+
+            lowerBoundsx = np.concatenate([lowerBoundsq, lowerBoundsv])
+            upperBoundsx = np.concatenate([upperBoundsq, upperBoundsv])
+
+            lowerBoundsdx = state.diff(robot.x0, lowerBoundsx)
+            upperBoundsdx = state.diff(robot.x0, upperBoundsx)
+            for i in range(len(lowerBoundsdx)):
+                if np.isnan(lowerBoundsdx[i]) or np.isinf(lowerBoundsdx[i]):
+                    lowerBoundsdx[i] = -maxfloat
+                if np.isnan(upperBoundsdx[i]) or np.isinf(upperBoundsdx[i]):
+                    upperBoundsdx[i] = maxfloat
+
+            print("Lower bounds dx", lowerBoundsdx)
+            print("Upper bounds dx", upperBoundsdx)
+            # xLimitConstraint = croc.ConstraintModelResidual(
+            #     state, xLimitResidual, lowerBoundsdx, upperBoundsdx
+            # )
+            # constraints.addConstraint("jointLimit", xLimitConstraint)
+            xLimitActivation = croc.ActivationModelQuadraticBarrier(
+                croc.ActivationBounds(lowerBoundsdx, upperBoundsdx, 0.1)
+            )
+            cost = croc.CostModelResidual(state, xLimitActivation, xLimitResidual)
+            costs.addCost("jointLimit", cost, p.jointLimitWeight)
+
+        if p.refJointAcceleration > 0:
+            accResidual = croc.ResidualModelJointAcceleration(state, actuation.nu)
+            accAct = croc.ActivationModelWeightedQuad(p.accImportance**2)
+            accCost = croc.CostModelResidual(state, accAct, accResidual)
+            costs.addCost("jointAcc", accCost, p.refJointAcceleration)
+
         # Action
         damodel = croc.DifferentialActionModelContactFwdDynamics(
-            state, actuation, contacts, costs, p.kktDamping, True
+            state, actuation, contacts, costs, constraints, p.kktDamping, True
         )
         amodel = croc.IntegratedActionModelEuler(damodel, p.DT)
 
@@ -352,7 +436,7 @@ def buildRunningModels(robotWrapper, contactPattern, params):
 
 
 # ### TERMINAL MODEL ##################################################################
-def buildTerminalModel(robotWrapper, contactPattern, params):
+def buildTerminalModel(robotWrapper, contactPattern, params, with_constraints=False):
     robot = robotWrapper
     p = params
     pattern = contactPattern[-1]
@@ -421,8 +505,12 @@ def buildTerminalModel(robotWrapper, contactPattern, params):
 
 
 def buildSolver(robotWrapper, contactPattern, walkParams, solver='FDDP'):
-    models = buildRunningModels(robotWrapper, contactPattern, walkParams)
-    termmodel = buildTerminalModel(robotWrapper, contactPattern, walkParams)
+    with_constraints = False
+    if solver == 'CSQP':
+        print("Using CSQP solver, creating constraints")
+        with_constraints = True
+    models = buildRunningModels(robotWrapper, contactPattern, walkParams, with_constraints)
+    termmodel = buildTerminalModel(robotWrapper, contactPattern, walkParams, with_constraints)
 
     problem = croc.ShootingProblem(robotWrapper.x0, models, termmodel)
     if solver == 'FDDP':
@@ -435,16 +523,17 @@ def buildSolver(robotWrapper, contactPattern, walkParams, solver='FDDP'):
         except ImportError:
             print("Please install the `mim_solvers` package to use CSQP")
             sys.exit(1)
+        input("Press Enter to continue...")
         ddp = mim_solvers.SolverCSQP(problem)
         ddp.termination_tolerance = walkParams.solver_th_stop
         # ddp.eps_abs = 1e-3
         # ddp.eps_rel = 0
-        # ddp.mu = 1e2
-        # ddp.mu2 = 0
-        # ddp.max_qp_iters = 100
-        ddp.use_filter_line_search = False
+        ddp.mu = 100
+        ddp.mu2 = 10
+        ddp.max_qp_iters = 1000
+        ddp.use_filter_line_search = True
         # ddp.alpha = 1e-5
-        ddp.with_callbacks = True # verbose
+        ddp.with_callbacks = True
     else:
         raise ValueError('Unknown solver: %s \n Supported option are FDDP and CSQP' % solver)
     return ddp

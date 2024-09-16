@@ -49,6 +49,7 @@ class CostPlotter:
         plt.grid()
         plt.legend()
         plt.tight_layout()
+        # plt.savefig("running_costs.png")
 
         plt.figure("Terminal Costs")
         n_terminal = len(terminal_costs.keys())
@@ -60,7 +61,8 @@ class CostPlotter:
         plt.yscale("log")
         plt.grid()
         plt.legend()
-        plt.tight_layout()        
+        plt.tight_layout()       
+        # plt.savefig("terminal_costs.png") 
 
 class WalkPlotter:
     """
