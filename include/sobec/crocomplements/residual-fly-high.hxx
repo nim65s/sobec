@@ -18,10 +18,22 @@ template <typename Scalar>
 ResidualModelFlyHighTpl<Scalar>::ResidualModelFlyHighTpl(
     boost::shared_ptr<StateMultibody> state,
     const pinocchio::FrameIndex frame_id, const Scalar slope,
+    const Scalar ground_height, const std::size_t nu)
+    : Base(state, 2, nu, true, true, false),
+      frame_id(frame_id),
+      slope(slope),
+      ground_height(ground_height),
+      pin_model_(*state->get_pinocchio()) {}
+
+template <typename Scalar>
+ResidualModelFlyHighTpl<Scalar>::ResidualModelFlyHighTpl(
+    boost::shared_ptr<StateMultibody> state,
+    const pinocchio::FrameIndex frame_id, const Scalar slope,
     const std::size_t nu)
     : Base(state, 2, nu, true, true, false),
       frame_id(frame_id),
       slope(slope),
+      ground_height(0.),
       pin_model_(*state->get_pinocchio()) {}
 
 template <typename Scalar>
@@ -31,6 +43,7 @@ ResidualModelFlyHighTpl<Scalar>::ResidualModelFlyHighTpl(
     : Base(state, 2, true, true, false),
       frame_id(frame_id),
       slope(slope),
+      ground_height(0.),
       pin_model_(*state->get_pinocchio()) {}
 
 template <typename Scalar>
@@ -50,7 +63,7 @@ void ResidualModelFlyHighTpl<Scalar>::calc(
                                         pinocchio::LOCAL_WORLD_ALIGNED)
                 .linear()
                 .head(2);
-  d->ez = exp(-d->pinocchio->oMf[frame_id].translation()[2] * slope);
+  d->ez = exp(-(d->pinocchio->oMf[frame_id].translation()[2] - ground_height) * slope);
   data->r *= d->ez;
 }
 

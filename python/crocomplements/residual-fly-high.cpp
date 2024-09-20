@@ -24,13 +24,14 @@ void exposeResidualFlyHigh() {
 
   bp::class_<ResidualModelFlyHigh, bp::bases<ResidualModelAbstract> >(
       "ResidualModelFlyHigh",
-      bp::init<boost::shared_ptr<StateMultibody>, pinocchio::FrameIndex, double,
+      bp::init<boost::shared_ptr<StateMultibody>, pinocchio::FrameIndex, double, double,
                std::size_t>(
-          bp::args("self", "state", "frame_id", "slope", "nu"),
+          bp::args("self", "state", "frame_id", "slope", "ground_height", "nu"),
           "Initialize the residual model.\n\n"
           ":param state: state of the multibody system\n"
           ":param frame_id: reference colliding frame\n"
           ":param slope: slope ie altitude multiplier."
+          ":param ground_height: reference altitude of the ground\n"
           ":param nu: dimension of control vector"))
       .def<void (ResidualModelFlyHigh::*)(
           const boost::shared_ptr<ResidualDataAbstract>&,
