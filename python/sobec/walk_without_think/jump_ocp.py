@@ -19,12 +19,8 @@ def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=Fa
     p = params
     robot = robotWrapper
 
-    referenceForces = computeReferenceForces(
-        contactPattern,
-        robot.gravForce,
-        transitionDuration=params.transitionDuration,
-        minimalNormalForce=params.minimalNormalForce,
-    )
+    referenceForces = p.getReferenceForces(robot.gravForce, robot.com0)
+
     models = []
 
     # #################################################################################
@@ -89,9 +85,21 @@ def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=Fa
 
         if p.comWeight > 0:
             comResidual = croc.ResidualModelCoMPosition(state, robot.com0, actuation.nu)
-            comAct = croc.ActivationModelWeightedQuad(np.array([0, 0, 1]))
+            comAct = croc.ActivationModelWeightedQuad(p.comImportance)
             comCost = croc.CostModelResidual(state, comAct, comResidual)
             costs.addCost("com", comCost, p.comWeight)
+
+        if p.comRefTrajWeight > 0:
+            comRef = [p.comRefTraj[t][i]*robot.com0[i] for i in range(3)]
+            print("comRef", comRef)
+            comResidual = croc.ResidualModelCoMPosition(state, np.array(comRef), actuation.nu)
+            comHeightAct = croc.ActivationModelWeightedQuad(p.comRefTrajImportance[t])
+            comHeightCost = croc.CostModelResidual(state, comHeightAct, comResidual)
+            costs.addCost(
+                "com_height",
+                comHeightCost,
+                p.comRefTrajWeight,
+            )
 
         if p.vcomWeight > 0:
             comVelResidual = sobec.ResidualModelCoMVelocity(state, p.vcomRef, actuation.nu)
@@ -140,7 +148,7 @@ def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=Fa
             # Cone with enormous friction (Assuming the robot will barely ever slide).
             # p.footSize is the allowed area size, while cone expects the corner
             # coordinates => x2
-            if p.conePenaltyWeight:
+            if p.conePenaltyWeight > 0:
                 fmin = p.minimalNormalForce
                 wbound = p.footSize * 2 if not p.withNormalForceBoundOnly else 1000.0
                 wbound = np.array([wbound] * 2)
@@ -181,8 +189,11 @@ def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=Fa
 
             # Follow reference (smooth) contact forces
             if p.refForceWeight > 0:
+                print(referenceForces[t])
+                forceRef = pin.Force.Zero()
+                forceRef.linear[2] = referenceForces[t][k]
                 forceRefResidual = croc.ResidualModelContactForce(
-                    state, cid, pin.Force(referenceForces[t][k]), 6, actuation.nu
+                    state, cid, forceRef, 6, actuation.nu
                 )
                 forceRefCost = croc.CostModelResidual(state, forceRefResidual)
                 costs.addCost(
@@ -200,7 +211,7 @@ def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=Fa
 
                 print("Impact %s at time %s" % (cid, t))
                 if p.impactAltitudeWeight > 0:
-                    impactPosRef = np.array([0, 0, 0])
+                    impactPosRef = np.array([0, 0, p.slope * t])
                     impactResidual = croc.ResidualModelFrameTranslation(
                         state, cid, impactPosRef, actuation.nu
                     )
@@ -434,7 +445,6 @@ def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=Fa
 
     return models
 
-
 # ### TERMINAL MODEL ##################################################################
 def buildTerminalModel(robotWrapper, contactPattern, params, with_constraints=False):
     robot = robotWrapper
@@ -480,7 +490,6 @@ def buildTerminalModel(robotWrapper, contactPattern, params, with_constraints=Fa
     # Costs
     costs = croc.CostModelSum(state, actuation.nu)
 
-    # if "stateTerminalTarget" not in locals():
     if p.stateTerminalWeight > 0:
         stateTerminalTarget = robot.x0.copy()
         stateTerminalTarget[:3] += p.vcomRef * T * p.DT
@@ -500,10 +509,7 @@ def buildTerminalModel(robotWrapper, contactPattern, params, with_constraints=Fa
 
     return termmodel
 
-
 # ### SOLVER ########################################################################
-
-
 def buildSolver(robotWrapper, contactPattern, walkParams, solver='FDDP'):
     with_constraints = False
     if solver == 'CSQP':
@@ -538,7 +544,6 @@ def buildSolver(robotWrapper, contactPattern, walkParams, solver='FDDP'):
         raise ValueError('Unknown solver: %s \n Supported option are FDDP and CSQP' % solver)
     return ddp
 
-
 def buildInitialGuess(problem, walkParams):
     if walkParams.guessFile is not None:
         try:
@@ -562,9 +567,7 @@ def buildInitialGuess(problem, walkParams):
 
     return x0s, u0s
 
-
 # ### SOLUTION ######################################################################
-
 
 class Solution:
     def __init__(self, robotWrapper, ddp):
@@ -578,7 +581,7 @@ class Solution:
                 if cm.data().contact.type == pin.LOCAL
                 else cd.data().f.vector
                 for cm,cd in zip(m.differential.contacts.contacts,
-                                 d.differential.multibody.contacts.contacts)
+                                d.differential.multibody.contacts.contacts)
             ]
             for m,d in zip(ddp.problem.runningModels,ddp.problem.runningDatas)
         ]

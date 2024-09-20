@@ -64,6 +64,8 @@ endforeach()
 
 set(${PY_WALK_NAME}_PYTHON
     __init__.py
+    jump_ocp.py
+    stairs_ocp.py
     ocp.py
     weight_share.py
     robot_wrapper.py

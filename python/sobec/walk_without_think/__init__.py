@@ -1,8 +1,10 @@
 # flake8: noqa
-from . import ocp, weight_share, robot_wrapper, config_mpc, save_traj, actuation_matrix
+from . import ocp, weight_share, robot_wrapper, config_mpc, save_traj, actuation_matrix, jump_ocp
 from . import miscdisp, params, yaml_params
 
 from .ocp import Solution, buildSolver, buildInitialGuess
+from .jump_ocp import Solution as JumpSolution, buildSolver as buildJumpSolver, buildInitialGuess as buildJumpInitialGuess 
+from .stairs_ocp import Solution as StairsSolution, buildSolver as buildStairsSolver, buildInitialGuess as buildStairsInitialGuess
 from .params import WalkParams
 from .robot_wrapper import RobotWrapper
 from .miscdisp import CallbackMPCWalk, dispocp

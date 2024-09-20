@@ -200,7 +200,7 @@ def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=Fa
 
                 print("Impact %s at time %s" % (cid, t))
                 if p.impactAltitudeWeight > 0:
-                    impactPosRef = np.array([0, 0, 0])
+                    impactPosRef = np.array([0, 0, p.groundHeight[t]])
                     impactResidual = croc.ResidualModelFrameTranslation(
                         state, cid, impactPosRef, actuation.nu
                     )
@@ -319,10 +319,25 @@ def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=Fa
                     p.verticalFootVelWeight,
                 )
 
-            # Slope is /2 since it is squared in casadi (je me comprends)
+            if p.footTrajectoryWeight > 0 and (p.footTrajImportance[t][k] > 0).any():
+                print("At t=%s add foot trajectory for %s" % (t, k))
+                footTrajReference = p.footTrajectories[t][k]
+                print("Foot trajectory reference", footTrajReference)
+                footTrajResidual = croc.ResidualModelFrameTranslation(
+                    state, fid, footTrajReference, actuation.nu
+                )
+                footTrajAct = croc.ActivationModelWeightedQuad(p.footTrajImportance[t][k])
+                footTrajCost = croc.CostModelResidual(state, footTrajAct, footTrajResidual)
+                costs.addCost(
+                    "%s_foottraj" % robot.model.frames[fid].name,
+                    footTrajCost,
+                    p.footTrajectoryWeight,
+                )
+
             if p.flyHighWeight > 0:
+                groundAltitude = p.groundAltitude[t]
                 flyHighResidual = sobec.ResidualModelFlyHigh(
-                    state, fid, p.flyHighSlope / 2.0, actuation.nu
+                    state, fid, p.flyHighSlope / 2.0, groundAltitude, actuation.nu
                 )
                 flyHighCost = croc.CostModelResidual(state, flyHighResidual)
                 costs.addCost(

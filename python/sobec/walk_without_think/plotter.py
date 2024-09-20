@@ -49,7 +49,7 @@ class CostPlotter:
         plt.grid()
         plt.legend()
         plt.tight_layout()
-        # plt.savefig("running_costs.png")
+        plt.savefig("running_costs.png")
 
         plt.figure("Terminal Costs")
         n_terminal = len(terminal_costs.keys())
@@ -62,7 +62,7 @@ class CostPlotter:
         plt.grid()
         plt.legend()
         plt.tight_layout()       
-        # plt.savefig("terminal_costs.png") 
+        plt.savefig("terminal_costs.png") 
 
 class WalkPlotter:
     """
@@ -283,10 +283,10 @@ class WalkPlotter:
         plt.subplot(412)
         plt.plot(complot[:, 2])
         plt.ylabel("pos z")
-        ax = plt.axis()
-        plt.axis(
-            (ax[0], ax[1], com0[2] - 2.5e-2, com0[2] + 2.5e-2)
-        )  # yaxis is 5cm around 0 position
+        # ax = plt.axis()
+        # plt.axis(
+        #     (ax[0], ax[1], com0[2] - 2.5e-2, com0[2] + 2.5e-2)
+        # )  # yaxis is 5cm around 0 position
         plt.subplot(413)
         plt.plot(vcomplot[:, :2])
         plt.ylabel("vel x-y")
