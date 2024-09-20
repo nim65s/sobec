@@ -61,7 +61,7 @@ def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=Fa
                 cm.joint2_placement,
                 pin.ReferenceFrame.LOCAL,
                 actuation.nu,
-                np.array([0., 0.])
+                np.array([cm.corrector.Kp[0], cm.corrector.Kd[0]])
             )
             contacts.addContact(f"loop_contact_{k}", contact)
 
@@ -322,7 +322,7 @@ def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=Fa
             # Slope is /2 since it is squared in casadi (je me comprends)
             if p.flyHighWeight > 0:
                 flyHighResidual = sobec.ResidualModelFlyHigh(
-                    state, fid, p.flyHighSlope / 2.0, actuation.nu
+                    state, fid, p.flyHighSlope / 2.0, 0.0, actuation.nu
                 )
                 flyHighCost = croc.CostModelResidual(state, flyHighResidual)
                 costs.addCost(
@@ -473,7 +473,7 @@ def buildTerminalModel(robotWrapper, contactPattern, params, with_constraints=Fa
             cm.joint2_placement,
             pin.ReferenceFrame.LOCAL,
             actuation.nu,
-            np.array([0., 0.])
+            np.array([cm.corrector.Kp[0], cm.corrector.Kd[0]])
         )
         contacts.addContact(f"loop_contact_{k}", contact)
 

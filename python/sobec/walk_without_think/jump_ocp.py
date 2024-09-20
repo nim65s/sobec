@@ -57,7 +57,7 @@ def buildRunningModels(robotWrapper, contactPattern, params, with_constraints=Fa
                 cm.joint2_placement,
                 pin.ReferenceFrame.LOCAL,
                 actuation.nu,
-                np.array([0., 0.])
+                np.array([cm.corrector.Kp[0], cm.corrector.Kd[0]])
             )
             contacts.addContact(f"loop_contact_{k}", contact)
 
@@ -483,7 +483,7 @@ def buildTerminalModel(robotWrapper, contactPattern, params, with_constraints=Fa
             cm.joint2_placement,
             pin.ReferenceFrame.LOCAL,
             actuation.nu,
-            np.array([0., 0.])
+            np.array([cm.corrector.Kp[0], cm.corrector.Kd[0]])
         )
         contacts.addContact(f"loop_contact_{k}", contact)
 
