@@ -16,7 +16,8 @@ stdenv.mkDerivation rec {
     root = ./.;
     fileset = lib.fileset.unions [
       ./benchmark
-      ./CMakeLists.txt ./examples
+      ./CMakeLists.txt
+      ./examples
       ./include
       ./package.xml
       ./python

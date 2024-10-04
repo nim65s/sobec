@@ -19,7 +19,12 @@
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       systems = inputs.nixpkgs.lib.systems.flakeExposed;
       perSystem =
-        { pkgs, self', system, ... }:
+        {
+          pkgs,
+          self',
+          system,
+          ...
+        }:
         {
           apps.default = {
             type = "app";
@@ -28,9 +33,9 @@
           devShells.default = pkgs.mkShell { inputsFrom = [ self'.packages.default ]; };
           packages = {
             default = self'.packages.sobec;
-            sobec = pkgs.python3Packages.toPythonModule (pkgs.callPackage ./package.nix { 
-              inherit (inputs.crocoddyl.packages.${system}) crocoddyl;
-            });
+            sobec = pkgs.python3Packages.toPythonModule (
+              pkgs.callPackage ./package.nix { inherit (inputs.crocoddyl.packages.${system}) crocoddyl; }
+            );
           };
         };
     };
