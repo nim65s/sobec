@@ -1,5 +1,5 @@
 {
-  description = "optimal control library for robot control under contact sequence.";
+  description = "Sandbox for optimal control explicitly for bipeds";
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
